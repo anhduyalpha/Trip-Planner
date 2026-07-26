@@ -56,8 +56,14 @@ export function computeLedger(events, members) {
  */
 export function suggestSettlements(ledger) {
   const EPS = 1 // bỏ qua lệch dưới 1đ
-  const creditors = ledger.filter((r) => r.balance > EPS).map((r) => ({ name: r.member.display_name, amount: r.balance }))
-  const debtors = ledger.filter((r) => r.balance < -EPS).map((r) => ({ name: r.member.display_name, amount: -r.balance }))
+  // Kèm id: hai thành viên có thể trùng display_name (user_id NULL được phép
+  // lặp), nên nơi gọi phải lọc theo id chứ không theo tên.
+  const creditors = ledger
+    .filter((r) => r.balance > EPS)
+    .map((r) => ({ id: r.member.id, name: r.member.display_name, amount: r.balance }))
+  const debtors = ledger
+    .filter((r) => r.balance < -EPS)
+    .map((r) => ({ id: r.member.id, name: r.member.display_name, amount: -r.balance }))
 
   creditors.sort((a, b) => b.amount - a.amount)
   debtors.sort((a, b) => b.amount - a.amount)
@@ -67,7 +73,13 @@ export function suggestSettlements(ledger) {
   let j = 0
   while (i < debtors.length && j < creditors.length) {
     const amount = Math.min(debtors[i].amount, creditors[j].amount)
-    out.push({ from: debtors[i].name, to: creditors[j].name, amount })
+    out.push({
+      from: debtors[i].name,
+      to: creditors[j].name,
+      fromId: debtors[i].id,
+      toId: creditors[j].id,
+      amount
+    })
     debtors[i].amount -= amount
     creditors[j].amount -= amount
     if (debtors[i].amount <= EPS) i += 1
