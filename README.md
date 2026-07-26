@@ -12,10 +12,8 @@ phân quyền Lead/Member, chia tiền nhóm và theo dõi trạng thái theo th
 ![CSS](https://img.shields.io/badge/CSS-thuần-1572B6?logo=css3&logoColor=white&labelColor=20232a)
 
 [⚡ Chạy nhanh](#-chạy-nhanh-để-chấm-bài-1-phút) ·
-[🎬 Kịch bản demo](#-kịch-bản-demo-2-phút) ·
 [✅ Đối chiếu đề bài](#-đối-chiếu-với-yêu-cầu-đề-bài) ·
-[📁 Cấu trúc](#-cấu-trúc-thư-mục) ·
-[💡 Thiết kế](#-ghi-chú-thiết-kế)
+[📁 Cấu trúc](#-cấu-trúc-thư-mục)
 
 </div>
 
@@ -79,19 +77,6 @@ Mở <http://localhost:5173> → bấm **Đăng ký** tạo tài khoản bất k
 </details>
 
 Build production: `npm run build` · xem thử bản build: `npm run preview`
-
----
-
-## 🎬 Kịch bản demo 2 phút
-
-Đường đi nhanh nhất qua đủ các chức năng của đề:
-
-1. **Đăng ký** một tài khoản → vào trang danh sách chuyến đi.
-2. **Tạo chuyến đi** → bạn tự động là **Lead** 👑.
-3. Tab **Thành viên** → thêm 2–3 người (không cần tài khoản vẫn chia tiền được).
-4. Tab **Lịch trình** → **+ Thêm hoạt động**. Đặt giờ bắt đầu lùi vài phút so với hiện tại để thấy nó tự chuyển sang **Đang diễn ra** và vạch **BÂY GIỜ** trên đường ray thời gian.
-5. Nhập **chi phí** + chọn người trả + tick người tham gia → tab **Chi tiêu** hiện bảng ai nợ ai.
-6. Thử **phân quyền**: mở cửa sổ ẩn danh, đăng ký tài khoản thứ hai, nhập **mã tham gia** (hiện ở tab Thành viên). Tài khoản này là Member — hoạt động họ tạo sẽ vào mục **Chờ duyệt**, quay lại tài khoản Lead để duyệt.
 
 ---
 
@@ -163,17 +148,3 @@ trip-planner/
         ├── Expenses.jsx
         └── Stats.jsx
 ```
-
----
-
-## 💡 Ghi chú thiết kế
-
-**⏱️ Trạng thái được tính, không được lưu cứng.** Ba trạng thái *Sắp tới / Đang diễn ra / Đã xong* suy ra từ giờ hiện tại nên giao diện đổi ngay lập tức, không chờ round-trip xuống server. Hai trạng thái phụ *Tạm hoãn / Hủy* là lựa chọn của người dùng và luôn thắng logic tự động. Song song đó, RPC `sync_trip_statuses` ghi trạng thái xuống database định kỳ để dữ liệu cũng đúng khi không ai mở app.
-
-**🔐 Phân quyền đặt ở database, không chỉ ở UI.** Nút bấm bị ẩn theo quyền, nhưng lớp bảo vệ thật nằm ở Row Level Security: dù gọi trực tiếp API, Member vẫn không xóa được hoạt động đã duyệt và không tự duyệt được hoạt động của mình. Các hàm kiểm tra quyền dùng `security definer` để tránh RLS đệ quy.
-
-**👥 Thành viên không cần tài khoản.** Lead thêm được người "ngoại tuyến" để assign và chia tiền ngay; ai muốn tự đăng nhập thì dùng mã tham gia 6 ký tự.
-
-**🔀 Đổi thứ tự bằng cách hoán đổi khung giờ.** Kéo thẻ A thả lên thẻ B thì hai khung giờ đổi chỗ — không bao giờ tạo khoảng trống hay va chạm giờ mới. Nút ↑ ↓ dùng đúng một hàm đó nên hành vi trên máy tính và điện thoại giống hệt nhau.
-
-**🔄 Realtime nhiều người.** App lắng nghe Supabase Realtime: Lead duyệt một hoạt động thì máy của các thành viên khác tự cập nhật.
