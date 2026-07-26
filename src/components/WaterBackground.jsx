@@ -202,7 +202,23 @@ void main() {
 const wrapTau = (v) => v - TAU * Math.floor(v / TAU)
 const wrapNP = (v) => v - NP * Math.floor(v / NP)
 
-export default function WaterBackground() {
+// Hai biến thể dùng CHUNG một shader:
+//  auth      — toàn màn hình trang đăng nhập, có tương tác con trỏ, fps tự do.
+//  wallpaper — nền cố định của app: nhỏ, chậm, không tương tác; CSS blur 14px
+//              đè lên nên độ phân giải thấp không nhìn ra được.
+const VARIANTS = {
+  auth: { scale: null, maxFps: 0, timeScale: 1, interactive: true, slowDt: 0.028 },
+  // maxFps thấp có chủ ý: chi phí thật của wallpaper KHÔNG nằm ở shader (đã
+  // hạ xuống 0.22 lần kích thước) mà ở `filter: blur()` của CSS — bộ lọc chạy
+  // trên ảnh đã rasterize ở nguyên độ phân giải màn hình, mỗi lần canvas đổi
+  // nội dung. Với blur 10px + timeScale 0.32, mặt nước dịch chưa tới 1px giữa
+  // hai frame nên 10fps và 24fps nhìn như nhau.
+  wallpaper: { scale: 0.22, maxFps: 10, timeScale: 0.32, interactive: false, slowDt: 0.085 }
+}
+
+export default function WaterBackground({ variant = 'auth' }) {
+  const cfg = VARIANTS[variant] ?? VARIANTS.auth
+  const wp = variant === 'wallpaper'
   const canvasRef = useRef(null)
   const [mode, setMode] = useState(() =>
     window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'static' : 'gl'
@@ -283,19 +299,35 @@ export default function WaterBackground() {
     const syncRect = () => {
       rect = canvas.getBoundingClientRect()
     }
+    // Khai báo TRƯỚC size() vì size() được gọi ngay bên dưới và có ghi vào last.
+    let last = performance.now()
     const size = () => {
       const cw = canvas.clientWidth
       const ch = canvas.clientHeight
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
-      let s = dpr * quality
-      const px = cw * ch * s * s
-      if (px > MAX_PX) s *= Math.sqrt(MAX_PX / px)
+      let s
+      if (cfg.scale) {
+        // Wallpaper: BỎ QUA devicePixelRatio. 0.22 × 1920 ≈ 422px, phóng to
+        // 4.5 lần rồi blur 14px -> không còn tần số nào để mắt bắt lỗi.
+        s = cfg.scale * quality
+        const w0 = cw * s
+        if (w0 > 560) s *= 560 / w0
+      } else {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
+        s = dpr * quality
+        const px = cw * ch * s * s
+        if (px > MAX_PX) s *= Math.sqrt(MAX_PX / px)
+      }
       const w = Math.max(1, Math.round(cw * s))
       const h = Math.max(1, Math.round(ch * s))
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w
         canvas.height = h
         gl.viewport(0, 0, w, h)
+        // Đổi kích thước làm buffer bị xoá về màu clear (đen đặc vì alpha:false).
+        // Không vẽ lại NGAY thì với cap fps sẽ có 1-3 frame đen phủ toàn màn
+        // hình — thấy rõ khi kéo cửa sổ hoặc mở/đóng modal (thanh cuộn biến mất
+        // làm khung nhìn rộng ra). Cho frame kế tiếp bỏ qua cap.
+        last = -1e9
       }
       syncRect()
     }
@@ -390,25 +422,41 @@ export default function WaterBackground() {
       forceSnap = true
     }
 
-    host.addEventListener('pointermove', onMove, { passive: true })
-    host.addEventListener('pointerdown', onDown)
-    host.addEventListener('pointerleave', onLeave)
-    window.addEventListener('blur', onLeave)
-    window.addEventListener('scroll', syncRect, { passive: true, capture: true })
-    window.addEventListener('resize', syncRect, { passive: true })
+    // Wallpaper nằm dưới pointer-events:none và không có tương tác -> KHÔNG gắn
+    // listener nào, đặc biệt tránh 'scroll' capture chạy mỗi frame cuộn.
+    if (cfg.interactive) {
+      host.addEventListener('pointermove', onMove, { passive: true })
+      host.addEventListener('pointerdown', onDown)
+      host.addEventListener('pointerleave', onLeave)
+      window.addEventListener('blur', onLeave)
+      window.addEventListener('scroll', syncRect, { passive: true, capture: true })
+      window.addEventListener('resize', syncRect, { passive: true })
+    }
 
     // ---------- Vòng lặp vẽ ----------
     // Cờ `running` đảm bảo chỉ có đúng một chuỗi rAF: mount trong tab ẩn
     // rồi hiện lại sẽ không tạo chuỗi thứ hai (chuỗi mồ côi không thể hủy).
     let raf = 0
     let running = false
-    let last = performance.now()
     let emaDt = 0
     let warmup = 0
+    const minFrame = cfg.maxFps ? 1000 / cfg.maxFps : 0
     const frame = (now) => {
       if (!running) return
+      // Modal đang mở: lớp phủ che kín wallpaper, vẽ tiếp là đốt GPU vô ích
+      // (filter blur chạy trên toàn màn hình mỗi lần canvas đổi nội dung).
+      if (wp && document.documentElement.dataset.modalOpen) {
+        raf = requestAnimationFrame(frame)
+        return
+      }
+      // Cap fps: chỉ VẼ khi đủ ngân sách; dt tính giữa 2 lần vẽ nên tốc độ
+      // chuyển động không đổi theo fps.
+      if (minFrame && now - last < minFrame) {
+        raf = requestAnimationFrame(frame)
+        return
+      }
       const dt = Math.max(0, Math.min(now - last, 100)) / 1000
-      t += dt
+      t += dt * cfg.timeScale
       last = now
 
       if (needTrailReset) {
@@ -465,7 +513,7 @@ export default function WaterBackground() {
       if (dt > 0) {
         emaDt = emaDt ? emaDt * 0.92 + dt * 0.08 : dt
         warmup += 1
-        if (warmup > 120 && emaDt > 0.028) {
+        if (warmup > 120 && emaDt > cfg.slowDt) {
           warmup = 0
           if (quality > 0.56) {
             quality = quality > 0.76 ? 0.75 : 0.55
@@ -519,12 +567,14 @@ export default function WaterBackground() {
     return () => {
       stop()
       ro.disconnect()
-      host.removeEventListener('pointermove', onMove)
-      host.removeEventListener('pointerdown', onDown)
-      host.removeEventListener('pointerleave', onLeave)
-      window.removeEventListener('blur', onLeave)
-      window.removeEventListener('scroll', syncRect, { capture: true })
-      window.removeEventListener('resize', syncRect)
+      if (cfg.interactive) {
+        host.removeEventListener('pointermove', onMove)
+        host.removeEventListener('pointerdown', onDown)
+        host.removeEventListener('pointerleave', onLeave)
+        window.removeEventListener('blur', onLeave)
+        window.removeEventListener('scroll', syncRect, { capture: true })
+        window.removeEventListener('resize', syncRect)
+      }
       document.removeEventListener('visibilitychange', onVisibility)
       canvas.removeEventListener('webglcontextlost', onContextLost)
       gl.deleteBuffer(buf)
@@ -532,8 +582,14 @@ export default function WaterBackground() {
       // Không gọi loseContext(): StrictMode mount effect 2 lần trên cùng canvas,
       // context bị lose sẽ không dùng lại được ở lần mount sau.
     }
-  }, [mode])
+  }, [mode, wp, cfg])
 
+  if (wp) {
+    // Wallpaper KHÔNG dùng fallback động: một gradient chuyển động sau mọi
+    // trang là phiền và repaint liên tục. Hỏng WebGL -> gradient tĩnh.
+    if (mode !== 'gl') return <div className="wp-fallback" aria-hidden="true" />
+    return <canvas ref={canvasRef} className="wp-canvas" aria-hidden="true" />
+  }
   if (mode === 'static') return <div className="water-fallback water-fallback--static" aria-hidden="true" />
   if (mode === 'css') return <div className="water-fallback" aria-hidden="true" />
   return <canvas ref={canvasRef} className="water-canvas" aria-hidden="true" />

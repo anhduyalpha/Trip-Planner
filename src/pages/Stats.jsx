@@ -49,7 +49,7 @@ export default function Stats() {
         </div>
       </div>
 
-      <div className="stat-grid" style={{ marginBottom: 22 }}>
+      <div className="stat-grid">
         <div className="stat">
           <span className="eyebrow">Hoạt động đã duyệt</span>
           <span className="stat-num">{approvedEvents.length}</span>
@@ -76,11 +76,11 @@ export default function Stats() {
       <section className="panel">
         <div className="eyebrow">Đang diễn ra lúc {fmtTime(now)}</div>
         {ongoing.length === 0 ? (
-          <p className="muted" style={{ margin: '6px 0 0' }}>
+          <p className="muted m-0">
             Không có hoạt động nào đang diễn ra.
           </p>
         ) : (
-          <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+          <ul className="list-tight">
             {ongoing.map((e) => (
               <li key={e.id}>
                 <strong>{e.title}</strong>{' '}
@@ -95,7 +95,7 @@ export default function Stats() {
 
       {/* Theo trạng thái */}
       <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
+        <div className="eyebrow section-lbl">
           Theo trạng thái
         </div>
         <div className="btn-row">
@@ -110,11 +110,11 @@ export default function Stats() {
 
       {/* Theo loại hoạt động */}
       <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
+        <div className="eyebrow section-lbl">
           Theo loại hoạt động
         </div>
         {byCategory.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Chưa có dữ liệu.</p>
+          <p className="muted m-0">Chưa có dữ liệu.</p>
         ) : (
           <Bars rows={byCategory.map((c) => ({ label: c.label, value: c.count }))} />
         )}
@@ -122,16 +122,16 @@ export default function Stats() {
 
       {/* Chi phí theo loại */}
       <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
+        <div className="eyebrow section-lbl">
           Chi phí theo loại hoạt động
         </div>
         {spendByCategory.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Chưa phát sinh chi phí.</p>
+          <p className="muted m-0">Chưa phát sinh chi phí.</p>
         ) : (
           <Bars rows={spendByCategory.map((r) => ({ label: r.label, value: r.sum }))} money />
         )}
         {topSpender && total > 0 && (
-          <p className="muted" style={{ fontSize: '0.86rem', marginBottom: 0, marginTop: 14 }}>
+          <p className="muted note-foot">
             Người ứng nhiều nhất: <strong>{topSpender.member.display_name}</strong> — {fmtVND(topSpender.paid)}
           </p>
         )}
@@ -143,7 +143,7 @@ export default function Stats() {
 function Bars({ rows, money = false }) {
   const max = Math.max(...rows.map((r) => r.value), 1)
   return (
-    <div className="bars" style={{ marginTop: 14 }}>
+    <div className="bars">
       {rows.map((r) => (
         <div className={`bar-row${money ? ' wide' : ''}`} key={r.label}>
           <span>{r.label}</span>

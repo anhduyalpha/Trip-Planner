@@ -41,18 +41,16 @@ export default function Schedule() {
       </div>
 
       {/* Đang diễn ra ngay lúc này */}
-      <div className="panel panel-now" style={{ marginBottom: 20 }}>
+      <div className="panel panel-now">
         <div className="eyebrow">Ngay lúc này</div>
         {ongoing.length === 0 ? (
-          <p className="muted" style={{ margin: '4px 0 0' }}>
+          <p className="muted m-0">
             Không có hoạt động nào đang diễn ra.
           </p>
         ) : (
           ongoing.map((e) => (
-            <h3 key={e.id} style={{ marginTop: 4 }}>
-              {e.title} <span className="mono muted" style={{ fontSize: '0.84rem', fontWeight: 400 }}>
-                đến {fmtTime(e.end_time)}
-              </span>
+            <h3 key={e.id} className="ongoing-title">
+              {e.title} <span className="mono muted ongoing-until">đến {fmtTime(e.end_time)}</span>
             </h3>
           ))
         )}
@@ -60,11 +58,11 @@ export default function Schedule() {
 
       {/* Chờ duyệt */}
       {waiting.length > 0 && (
-        <section className="panel" style={{ marginBottom: 26, borderColor: 'var(--violet)' }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>
+        <section className="panel panel-pending">
+          <div className="eyebrow section-lbl">
             Chờ duyệt · {waiting.length} hoạt động {isLead ? '— bạn cần xem qua' : ''}
           </div>
-          <div style={{ display: 'grid', gap: 10 }}>
+          <div className="stack-10">
             {waiting.map((e) => (
               <EventCard key={e.id} event={e} onEdit={setEditing} />
             ))}
@@ -101,8 +99,7 @@ export default function Schedule() {
                         <small>{fmtTime(ev.end_time)}</small>
                       </div>
                       <div
-                        className={dragId === ev.id ? 'dragging' : overId === ev.id ? 'drop-target' : ''}
-                        style={{ borderRadius: 'var(--radius)' }}
+                        className={`drop-wrap${dragId === ev.id ? ' dragging' : overId === ev.id ? ' drop-target' : ''}`}
                       >
                         <EventCard
                           event={ev}
@@ -138,7 +135,7 @@ export default function Schedule() {
         })
       )}
 
-      <p className="muted" style={{ fontSize: '0.84rem', marginTop: 8 }}>
+      <p className="muted page-note">
         Kéo một thẻ và thả lên thẻ khác trong cùng ngày để đổi khung giờ. Trên điện thoại dùng nút ↑ ↓.
       </p>
 

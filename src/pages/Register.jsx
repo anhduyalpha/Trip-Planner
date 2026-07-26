@@ -82,7 +82,7 @@ export default function Register() {
           {busy ? 'Đang tạo…' : 'Tạo tài khoản'}
         </button>
       </form>
-      <p className="muted center" style={{ marginBottom: 0, marginTop: 14, fontSize: '0.88rem' }}>
+      <p className="muted center auth-foot">
         Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
       </p>
     </div>

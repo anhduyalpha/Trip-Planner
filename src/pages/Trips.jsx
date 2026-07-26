@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
 import { fmtClock, fmtDuration, fmtTime } from '../lib/schedule'
 import { fmtVND } from '../lib/money'
+import { echoDate, echoRange } from '../lib/format'
 import { buildOverview, buildTripCard, dateRangeLabel, sortCards } from '../lib/dashboard'
 
 const makeCode = () => {
@@ -823,43 +824,92 @@ function CreateTrip({ onClose }) {
     navigate(`/trip/${tripId}`)
   }
 
+  const range = echoRange(form.start_date, form.end_date)
+
   return (
     <Modal
+      kicker="Chuyến đi mới"
       title="Tạo chuyến đi"
+      subtitle="Đặt tên và chọn ngày. Hệ thống sinh mã 6 ký tự để cả nhóm vào cùng lịch trình."
       onClose={onClose}
+      busy={busy}
       footer={
         <>
-          <button className="btn btn-ghost" onClick={onClose}>
+          {range && <span className="modal-foot-note mono">{range}</span>}
+          <button className="btn btn-ghost" type="button" onClick={onClose} disabled={busy}>
             Hủy
           </button>
-          <button className="btn" onClick={submit} disabled={busy}>
+          <button className="btn" type="button" onClick={submit} disabled={busy}>
+            {busy && <span className="spinner" aria-hidden="true" />}
             {busy ? 'Đang tạo…' : 'Tạo chuyến đi'}
           </button>
         </>
       }
     >
-      {error && <div className="alert alert-error">{error}</div>}
-      <div className="field">
-        <label htmlFor="t-name">Tên chuyến đi *</label>
-        <input id="t-name" value={form.name} onChange={set('name')} placeholder="Đà Lạt 3 ngày 2 đêm" />
-      </div>
-      <div className="field">
-        <label htmlFor="t-desc">Mô tả</label>
-        <textarea id="t-desc" value={form.description} onChange={set('description')} />
-      </div>
-      <div className="grid2">
+      {error && (
+        <div className="alert alert-error" role="alert" tabIndex={-1}>
+          {error}
+        </div>
+      )}
+
+      <section className="form-sec">
+        <h4 className="form-sec-title">Chuyến đi</h4>
         <div className="field">
-          <label htmlFor="t-start">Ngày đi</label>
-          <input id="t-start" type="date" value={form.start_date} onChange={set('start_date')} />
+          <label htmlFor="t-name">
+            Tên chuyến đi{' '}
+            <b className="req" aria-hidden="true">
+              *
+            </b>
+          </label>
+          <input
+            id="t-name"
+            data-autofocus
+            value={form.name}
+            onChange={set('name')}
+            placeholder="Đà Lạt 3 ngày 2 đêm"
+          />
         </div>
         <div className="field">
-          <label htmlFor="t-end">Ngày về</label>
-          <input id="t-end" type="date" value={form.end_date} onChange={set('end_date')} />
+          <label htmlFor="t-desc">Mô tả</label>
+          <textarea id="t-desc" value={form.description} onChange={set('description')} />
         </div>
-      </div>
-      <p className="muted create-note">
-        Bạn sẽ là Lead của chuyến đi này. Sau khi tạo, chia sẻ mã chuyến đi cho cả nhóm để mọi người tham gia.
-      </p>
+      </section>
+
+      <section className="form-sec">
+        <h4 className="form-sec-title">Lịch đi</h4>
+        <div className="grid2">
+          <div className="field">
+            <label htmlFor="t-start">Ngày đi</label>
+            <input
+              id="t-start"
+              type="date"
+              value={form.start_date}
+              onChange={set('start_date')}
+              aria-describedby="t-start-echo"
+            />
+            <p className="field-echo" id="t-start-echo">
+              {echoDate(form.start_date)}
+            </p>
+          </div>
+          <div className="field">
+            <label htmlFor="t-end">Ngày về</label>
+            <input
+              id="t-end"
+              type="date"
+              value={form.end_date}
+              onChange={set('end_date')}
+              min={form.start_date || undefined}
+              aria-describedby="t-end-echo"
+            />
+            <p className="field-echo" id="t-end-echo">
+              {echoDate(form.end_date)}
+            </p>
+          </div>
+        </div>
+        <p className="field-help">
+          Bạn sẽ là Lead của chuyến đi này. Sau khi tạo, chia sẻ mã chuyến đi cho cả nhóm để mọi người tham gia.
+        </p>
+      </section>
     </Modal>
   )
 }

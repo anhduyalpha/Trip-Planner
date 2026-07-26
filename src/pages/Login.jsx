@@ -58,7 +58,7 @@ export default function Login() {
           {busy ? 'Đang đăng nhập…' : 'Đăng nhập'}
         </button>
       </form>
-      <p className="muted center" style={{ marginBottom: 0, marginTop: 14, fontSize: '0.88rem' }}>
+      <p className="muted center auth-foot">
         Chưa có tài khoản? <Link to="/register">Đăng ký</Link>
       </p>
     </div>

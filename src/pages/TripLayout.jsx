@@ -46,7 +46,7 @@ function Shell() {
           </div>
           <h1>{trip.name}</h1>
         </div>
-        <div style={{ textAlign: 'right' }}>
+        <div className="topbar-clock">
           <div className="eyebrow">Giờ hiện tại</div>
           <div className="clock">{fmtClock(now)}</div>
         </div>

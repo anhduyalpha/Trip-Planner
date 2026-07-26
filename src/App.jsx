@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { isConfigured } from './lib/supabase'
+import AppLayout from './components/AppLayout'
 import AuthLayout from './components/AuthLayout'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -10,6 +11,7 @@ import Schedule from './pages/Schedule'
 import Members from './pages/Members'
 import Expenses from './pages/Expenses'
 import Stats from './pages/Stats'
+import NotFound from './pages/NotFound'
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
@@ -39,32 +41,30 @@ export default function App() {
 
   return (
     <Routes>
-      <Route element={loading ? null : !user ? <AuthLayout /> : <Navigate to="/" replace />}>
+      {/* element falsy bị react-router coi là "không có element" -> render thẳng
+          Outlet, khiến /login hiện TRẦN (không nền nước, không căn giữa) rồi
+          remount khi loading xong, xoá sạch email/mật khẩu vừa gõ. */}
+      <Route element={user && !loading ? <Navigate to="/" replace /> : <AuthLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>
+      {/* Layout route không có path: wallpaper mount 1 lần cho MỌI trang trong app */}
       <Route
-        path="/"
         element={
           <RequireAuth>
-            <Trips />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/trip/:tripId"
-        element={
-          <RequireAuth>
-            <TripLayout />
+            <AppLayout />
           </RequireAuth>
         }
       >
-        <Route index element={<Schedule />} />
-        <Route path="members" element={<Members />} />
-        <Route path="expenses" element={<Expenses />} />
-        <Route path="stats" element={<Stats />} />
+        <Route path="/" element={<Trips />} />
+        <Route path="/trip/:tripId" element={<TripLayout />}>
+          <Route index element={<Schedule />} />
+          <Route path="members" element={<Members />} />
+          <Route path="expenses" element={<Expenses />} />
+          <Route path="stats" element={<Stats />} />
+        </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }

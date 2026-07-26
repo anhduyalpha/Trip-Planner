@@ -73,7 +73,7 @@ export default function Members() {
                   </td>
                   <td className="muted">{m.user_id ? 'Đã liên kết' : 'Chưa có tài khoản'}</td>
                   <td>
-                    <div className="btn-row" style={{ justifyContent: 'flex-end' }}>
+                    <div className="btn-row btn-row--end">
                       {canEditRow && (
                         <button className="btn btn-ghost btn-tiny" onClick={() => setEditing(m)}>
                           Sửa
@@ -92,12 +92,12 @@ export default function Members() {
           </tbody>
         </table>
 
-        {members.length === 0 && <div className="empty" style={{ marginTop: 14 }}>Chưa có thành viên nào.</div>}
+        {members.length === 0 && <div className="empty empty-inset">Chưa có thành viên nào.</div>}
       </div>
 
       <div className="panel">
         <div className="eyebrow">Phân quyền đang áp dụng</div>
-        <ul className="muted" style={{ margin: '8px 0 0', paddingLeft: 20, fontSize: '0.9rem' }}>
+        <ul className="muted list-tight">
           <li>
             <strong>Lead</strong> — tạo/sửa/xóa mọi hoạt động, duyệt hoạt động của người khác, thêm và xóa thành viên.
           </li>
@@ -143,23 +143,35 @@ function MemberForm({ member, onClose, onSave }) {
 
   return (
     <Modal
+      kicker={member ? 'Hồ sơ thành viên' : 'Thành viên mới'}
       title={member ? 'Sửa thành viên' : 'Thêm thành viên'}
       onClose={onClose}
+      busy={busy}
       footer={
         <>
-          <button className="btn btn-ghost" onClick={onClose}>
+          <button className="btn btn-ghost" type="button" onClick={onClose} disabled={busy}>
             Hủy
           </button>
-          <button className="btn" onClick={submit} disabled={busy}>
+          <button className="btn" type="button" onClick={submit} disabled={busy}>
+            {busy && <span className="spinner" aria-hidden="true" />}
             {busy ? 'Đang lưu…' : 'Lưu'}
           </button>
         </>
       }
     >
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && (
+        <div className="alert alert-error" role="alert" tabIndex={-1}>
+          {error}
+        </div>
+      )}
       <div className="field">
-        <label htmlFor="m-name">Tên *</label>
-        <input id="m-name" value={name} onChange={(e) => setName(e.target.value)} />
+        <label htmlFor="m-name">
+          Tên{' '}
+          <b className="req" aria-hidden="true">
+            *
+          </b>
+        </label>
+        <input id="m-name" data-autofocus value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div className="field">
         <label htmlFor="m-role">Vai trò trong nhóm</label>
@@ -177,9 +189,9 @@ function MemberForm({ member, onClose, onSave }) {
         </datalist>
       </div>
       {!member && (
-        <p className="muted" style={{ fontSize: '0.84rem', marginBottom: 0 }}>
-          Thành viên thêm tay chưa có tài khoản — vẫn assign vào hoạt động và chia tiền được. Muốn họ tự đăng nhập, gửi
-          mã tham gia của chuyến đi.
+        <p className="field-help">
+          Thành viên thêm tay chưa có tài khoản — vẫn assign vào hoạt động và chia tiền được. Muốn họ tự đăng nhập,
+          gửi mã tham gia của chuyến đi.
         </p>
       )}
     </Modal>

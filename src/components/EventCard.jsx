@@ -54,7 +54,7 @@ export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onM
       {event.description && <p className="ev-desc">{event.description}</p>}
 
       {assignedMembers.length > 0 && (
-        <div className="avatars" style={{ marginTop: 9 }}>
+        <div className="avatars">
           {assignedMembers.map((m) => (
             <span key={m.id} className="pill" data-payer={String(m.id === event.payer_member_id)}>
               {m.display_name}
@@ -120,7 +120,7 @@ export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onM
               </button>
             </>
           ) : (
-            <span className="muted" style={{ fontSize: '0.76rem' }}>
+            <span className="muted tiny">
               Chỉ Lead sửa được
             </span>
           )}
