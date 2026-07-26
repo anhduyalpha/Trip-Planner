@@ -1,0 +1,179 @@
+<div align="center">
+
+# 🧭 Trip Planner — Quản lý lịch trình chuyến đi
+
+**Ứng dụng web giúp nhóm bạn dựng lịch trình chuyến đi: tạo hoạt động, sắp xếp khung giờ,
+phân quyền Lead/Member, chia tiền nhóm và theo dõi trạng thái theo thời gian thực.**
+
+![ReactJS](https://img.shields.io/badge/ReactJS-18-61DAFB?logo=react&logoColor=white&labelColor=20232a)
+![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white&labelColor=20232a)
+![React Router](https://img.shields.io/badge/React_Router-6-CA4245?logo=reactrouter&logoColor=white&labelColor=20232a)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL_·_Auth_·_Realtime-3FCF8E?logo=supabase&logoColor=white&labelColor=20232a)
+![CSS](https://img.shields.io/badge/CSS-thuần-1572B6?logo=css3&logoColor=white&labelColor=20232a)
+
+[⚡ Chạy nhanh](#-chạy-nhanh-để-chấm-bài-1-phút) ·
+[🎬 Kịch bản demo](#-kịch-bản-demo-2-phút) ·
+[✅ Đối chiếu đề bài](#-đối-chiếu-với-yêu-cầu-đề-bài) ·
+[📁 Cấu trúc](#-cấu-trúc-thư-mục) ·
+[💡 Thiết kế](#-ghi-chú-thiết-kế)
+
+</div>
+
+---
+
+## ✨ Tính năng chính
+
+| | Tính năng | Mô tả |
+|---|---|---|
+| 📝 | **CRUD Event** | Tiêu đề, mô tả, khung giờ, địa điểm, loại hoạt động, chi phí + người trả, assign nhiều thành viên |
+| ✅ | **Luồng duyệt** | Member tạo event → *Chờ duyệt*; Lead duyệt / từ chối — ép ở tầng database bằng trigger |
+| 🖱️ | **Kéo–thả** | Đổi khung giờ bằng drag & drop, kèm nút ↑ ↓ dùng được trên điện thoại |
+| ⏱️ | **Realtime engine** | Tự chuyển *Sắp tới → Đang diễn ra → Đã xong* theo giờ thật, vạch **BÂY GIỜ** trên lịch |
+| 🔐 | **Auth + phân quyền** | Đăng ký / đăng nhập Supabase Auth; Lead/Member phân quyền bằng Row Level Security |
+| 💸 | **Chia tiền nhóm** | Chia đều theo người tham gia, bảng *đã trả – phải trả = dư/nợ*, gợi ý "ai trả cho ai" ít lần chuyển nhất |
+| 📊 | **Thống kê** | Theo loại, theo trạng thái, chi phí từng loại, hoạt động đang diễn ra |
+| 🔄 | **Đồng bộ nhiều máy** | Supabase Realtime — Lead duyệt event, máy thành viên tự cập nhật |
+
+---
+
+## ⚡ Chạy nhanh để chấm bài (~1 phút)
+
+> Yêu cầu duy nhất: **Node.js 18 trở lên**. Database đã dựng sẵn trên Supabase — không cần cài đặt gì thêm.
+
+**1.** Cài thư viện:
+
+```bash
+npm install
+```
+
+**2.** Tạo file `.env` ở thư mục gốc với đúng nội dung sau:
+
+```env
+VITE_SUPABASE_URL=https://hihatziqrweeonrrylgz.supabase.co
+VITE_SUPABASE_ANON_KEY=sb_publishable_S27PRuHQoyhTAblTId0e6A_8U0N9jwN
+```
+
+**3.** Chạy:
+
+```bash
+npm run dev
+```
+
+Mở <http://localhost:5173> → bấm **Đăng ký** tạo tài khoản bất kỳ (không cần xác nhận email) → dùng ngay.
+
+> 🔒 **Ghi chú bảo mật:** Anon key của Supabase được thiết kế để công khai ở phía client (luôn nằm trong bundle JS gửi tới trình duyệt). Dữ liệu được bảo vệ bằng **Row Level Security** khai báo trong [`supabase/schema.sql`](supabase/schema.sql), không phụ thuộc vào việc giấu key. Key ghi sẵn ở đây để thuận tiện chấm bài; `service_role` key (bí mật thật sự) không xuất hiện ở bất kỳ đâu trong repo.
+
+<details>
+<summary>🛠️ <strong>Tự dựng database riêng (tùy chọn)</strong></summary>
+
+<br>
+
+1. Tạo project miễn phí tại <https://supabase.com>.
+2. Vào **SQL Editor**, dán toàn bộ nội dung [`supabase/schema.sql`](supabase/schema.sql) → **Run**.
+   File này tạo đủ bảng, khóa ngoại, Row Level Security, RPC và trigger.
+3. Vào **Authentication → Providers → Email**, tắt *Confirm email* để đăng ký xong đăng nhập được ngay.
+4. Copy `.env.example` thành `.env`, điền 2 giá trị ở **Project Settings → API**
+   ⚠️ `VITE_SUPABASE_URL` là URL gốc dạng `https://xxxx.supabase.co`, **không** kèm `/rest/v1`.
+5. `npm run dev`
+
+</details>
+
+Build production: `npm run build` · xem thử bản build: `npm run preview`
+
+---
+
+## 🎬 Kịch bản demo 2 phút
+
+Đường đi nhanh nhất qua đủ các chức năng của đề:
+
+1. **Đăng ký** một tài khoản → vào trang danh sách chuyến đi.
+2. **Tạo chuyến đi** → bạn tự động là **Lead** 👑.
+3. Tab **Thành viên** → thêm 2–3 người (không cần tài khoản vẫn chia tiền được).
+4. Tab **Lịch trình** → **+ Thêm hoạt động**. Đặt giờ bắt đầu lùi vài phút so với hiện tại để thấy nó tự chuyển sang **Đang diễn ra** và vạch **BÂY GIỜ** trên đường ray thời gian.
+5. Nhập **chi phí** + chọn người trả + tick người tham gia → tab **Chi tiêu** hiện bảng ai nợ ai.
+6. Thử **phân quyền**: mở cửa sổ ẩn danh, đăng ký tài khoản thứ hai, nhập **mã tham gia** (hiện ở tab Thành viên). Tài khoản này là Member — hoạt động họ tạo sẽ vào mục **Chờ duyệt**, quay lại tài khoản Lead để duyệt.
+
+---
+
+## ✅ Đối chiếu với yêu cầu đề bài
+
+<details open>
+<summary><strong>Bảng đối chiếu đầy đủ 6 nhóm yêu cầu</strong></summary>
+
+<br>
+
+| # | Yêu cầu | Nơi thực hiện |
+|---|---|---|
+| **1** | **CRUD Event** — title, mô tả, khung giờ, địa điểm, loại, trạng thái, hoàn thành, assign thành viên, chi phí + payer | [`EventForm.jsx`](src/components/EventForm.jsx) · [`EventCard.jsx`](src/components/EventCard.jsx) · [`TripContext.jsx`](src/context/TripContext.jsx) |
+| | Form nhập bằng **Modal** | [`Modal.jsx`](src/components/Modal.jsx) |
+| | **Validate**: title bắt buộc, giờ kết thúc sau giờ bắt đầu, chặn 2 event đè hoàn toàn lên nhau | [`schedule.js`](src/lib/schedule.js) → `validateEvent()`, `fullyOverlaps()` |
+| | Chọn loại hoạt động qua **dropdown** | [`EventForm.jsx`](src/components/EventForm.jsx) |
+| | **Luồng duyệt**: event của Member ở trạng thái *Chờ duyệt* | trigger `enforce_event_rules` trong [`schema.sql`](supabase/schema.sql) · khu "Chờ duyệt" ở [`Schedule.jsx`](src/pages/Schedule.jsx) |
+| **2** | **Kéo–thả** đổi khung giờ + nút **↑ ↓** dự phòng | [`Schedule.jsx`](src/pages/Schedule.jsx) (HTML5 drag & drop) → `swapEventSlots()` |
+| | **Realtime engine**: tự chuyển *Sắp tới → Đang diễn ra → Đã xong* | [`schedule.js`](src/lib/schedule.js) → `deriveStatus()` (tức thì, nhịp 1s) + RPC `sync_trip_statuses` ghi DB mỗi 30s |
+| | *Tạm hoãn* không áp dụng logic tự động | `deriveStatus()` trả về nguyên trạng thái |
+| | *Hủy* vẫn hiển thị, vẫn chiếm khung giờ, không auto | vẫn nằm trong đường ray và trong `findFullOverlap()`, bị loại khỏi tính tiền |
+| | Hiển thị event đang diễn ra | khối "Ngay lúc này" + vạch **BÂY GIỜ** ở [`Schedule.jsx`](src/pages/Schedule.jsx) · [`Stats.jsx`](src/pages/Stats.jsx) |
+| **3** | **Auth** đăng nhập / đăng ký | Supabase Auth · [`AuthContext.jsx`](src/context/AuthContext.jsx) · [`Login.jsx`](src/pages/Login.jsx) · [`Register.jsx`](src/pages/Register.jsx) |
+| | **CRUD thành viên** (tên + vai trò mô tả) | [`Members.jsx`](src/pages/Members.jsx) |
+| | **Phân quyền** Lead / Member | Row Level Security trong [`schema.sql`](supabase/schema.sql) + `canEditEvent()` ở [`TripContext.jsx`](src/context/TripContext.jsx) |
+| | 1 trip 1 Lead, người tạo trip là Lead | `trips.lead_id`, gán khi tạo ở [`Trips.jsx`](src/pages/Trips.jsx) |
+| **4** | **Chia đều chi phí** cho thành viên được assign | [`money.js`](src/lib/money.js) → `computeLedger()` |
+| | **Ai nợ ai bao nhiêu** (đã trả − phải trả) | `computeLedger()` + `suggestSettlements()` (greedy, ít lần chuyển tiền nhất) |
+| | Mỗi người đã chi / phải trả / tổng chuyến đi | [`Expenses.jsx`](src/pages/Expenses.jsx) |
+| **5** | **Thống kê** theo loại, trạng thái, event đang diễn ra, chi phí | [`Stats.jsx`](src/pages/Stats.jsx) |
+| **6** | **Lưu dữ liệu** | PostgreSQL trên Supabase · [`schema.sql`](supabase/schema.sql) |
+
+</details>
+
+---
+
+## 📁 Cấu trúc thư mục
+
+```
+trip-planner/
+├── index.html
+├── package.json
+├── vite.config.js
+├── .env.example
+├── supabase/
+│   └── schema.sql          # toàn bộ database: bảng, RLS, RPC, trigger
+└── src/
+    ├── main.jsx
+    ├── App.jsx             # định tuyến + bảo vệ route
+    ├── index.css           # hệ token màu/typography và toàn bộ style
+    ├── lib/
+    │   ├── supabase.js     # khởi tạo client
+    │   ├── schedule.js     # trạng thái theo thời gian, validate, format
+    │   └── money.js        # chia tiền, cân đối, gợi ý trả nợ
+    ├── context/
+    │   ├── AuthContext.jsx # phiên đăng nhập
+    │   └── TripContext.jsx # dữ liệu chuyến đi, CRUD, đồng hồ, phân quyền
+    ├── components/
+    │   ├── Modal.jsx
+    │   ├── EventForm.jsx
+    │   └── EventCard.jsx
+    └── pages/
+        ├── Login.jsx
+        ├── Register.jsx
+        ├── Trips.jsx       # danh sách / tạo trip / tham gia bằng mã
+        ├── TripLayout.jsx  # topbar + đồng hồ + tabs
+        ├── Schedule.jsx    # đường ray lịch trình, drag & drop, chờ duyệt
+        ├── Members.jsx
+        ├── Expenses.jsx
+        └── Stats.jsx
+```
+
+---
+
+## 💡 Ghi chú thiết kế
+
+**⏱️ Trạng thái được tính, không được lưu cứng.** Ba trạng thái *Sắp tới / Đang diễn ra / Đã xong* suy ra từ giờ hiện tại nên giao diện đổi ngay lập tức, không chờ round-trip xuống server. Hai trạng thái phụ *Tạm hoãn / Hủy* là lựa chọn của người dùng và luôn thắng logic tự động. Song song đó, RPC `sync_trip_statuses` ghi trạng thái xuống database định kỳ để dữ liệu cũng đúng khi không ai mở app.
+
+**🔐 Phân quyền đặt ở database, không chỉ ở UI.** Nút bấm bị ẩn theo quyền, nhưng lớp bảo vệ thật nằm ở Row Level Security: dù gọi trực tiếp API, Member vẫn không xóa được hoạt động đã duyệt và không tự duyệt được hoạt động của mình. Các hàm kiểm tra quyền dùng `security definer` để tránh RLS đệ quy.
+
+**👥 Thành viên không cần tài khoản.** Lead thêm được người "ngoại tuyến" để assign và chia tiền ngay; ai muốn tự đăng nhập thì dùng mã tham gia 6 ký tự.
+
+**🔀 Đổi thứ tự bằng cách hoán đổi khung giờ.** Kéo thẻ A thả lên thẻ B thì hai khung giờ đổi chỗ — không bao giờ tạo khoảng trống hay va chạm giờ mới. Nút ↑ ↓ dùng đúng một hàm đó nên hành vi trên máy tính và điện thoại giống hệt nhau.
+
+**🔄 Realtime nhiều người.** App lắng nghe Supabase Realtime: Lead duyệt một hoạt động thì máy của các thành viên khác tự cập nhật.
