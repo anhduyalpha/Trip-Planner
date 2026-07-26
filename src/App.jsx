@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { isConfigured } from './lib/supabase'
+import AuthLayout from './components/AuthLayout'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Trips from './pages/Trips'
@@ -38,8 +39,10 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={!user && !loading ? <Login /> : <Navigate to="/" replace />} />
-      <Route path="/register" element={!user && !loading ? <Register /> : <Navigate to="/" replace />} />
+      <Route element={loading ? null : !user ? <AuthLayout /> : <Navigate to="/" replace />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
       <Route
         path="/"
         element={
