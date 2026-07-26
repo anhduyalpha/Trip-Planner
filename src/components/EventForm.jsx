@@ -96,7 +96,7 @@ export default function EventForm({ event, onClose }) {
     <Modal
       kicker={editing ? 'Sửa hoạt động' : 'Hoạt động mới'}
       title={editing ? 'Sửa hoạt động' : 'Thêm hoạt động'}
-      subtitle="Điền khung giờ rồi chọn người tham gia — chi phí sẽ tự chia đều cho nhóm đó."
+      subtitle="Điền khung giờ rồi chọn người tham gia. Chi phí tự chia đều cho nhóm đó."
       onClose={onClose}
       busy={saving}
       footer={
@@ -118,7 +118,7 @@ export default function EventForm({ event, onClose }) {
     >
       {errors.length > 0 && (
         <div className="alert alert-error" role="alert" tabIndex={-1} ref={errRef}>
-          <strong className="alert-title">Chưa lưu được — {errors.length} vấn đề</strong>
+          <strong className="alert-title">Chưa lưu được: {errors.length} vấn đề</strong>
           <ul>
             {errors.map((e) => (
               <li key={e}>{e}</li>
@@ -129,7 +129,7 @@ export default function EventForm({ event, onClose }) {
 
       {!editing && !isLead && (
         <div className="alert alert-ok">
-          Bạn là Member — hoạt động sẽ ở trạng thái <strong>Chờ duyệt</strong> cho tới khi Lead duyệt.
+          Bạn là Member nên hoạt động sẽ ở trạng thái <strong>Chờ duyệt</strong> cho tới khi Lead duyệt.
         </div>
       )}
 
@@ -233,7 +233,7 @@ export default function EventForm({ event, onClose }) {
           <div className="field">
             <label htmlFor="ev-payer">Người đại diện trả</label>
             <select id="ev-payer" value={form.payer_member_id} onChange={set('payer_member_id')}>
-              <option value="">— Chưa chọn —</option>
+              <option value="">Chưa chọn</option>
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.display_name}

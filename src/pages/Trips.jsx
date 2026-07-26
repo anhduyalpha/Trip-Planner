@@ -188,11 +188,11 @@ export default function Trips() {
         </button>
       </header>
 
-      <main className="page page--dash">
+      <main className="page page--dash" id="noi-dung-chinh" tabIndex={-1}>
         <div className="dash">
           <section className="hero-sea">
             <div className="hero-main">
-              <p className="mast-kicker hero-kicker">{isEmpty ? 'Bắt đầu' : 'Trung tâm điều hành'}</p>
+              {isEmpty && <p className="mast-kicker hero-kicker">Bắt đầu</p>}
 
               {isEmpty ? (
                 <>
@@ -215,10 +215,9 @@ export default function Trips() {
                     <strong className="mono">{trips.length}</strong> chuyến đi
                     {statsReady && (
                       <>
-                        {' · '}
-                        <strong className="mono">{overview.activeCount}</strong> đang diễn ra
-                        {' · '}
-                        <strong className="mono">{overview.soon.length}</strong> hoạt động trong 24 giờ tới
+                        {', '}
+                        <strong className="mono">{overview.activeCount}</strong> đang diễn ra.{' '}
+                        <strong className="mono">{overview.soon.length}</strong> hoạt động trong 24 giờ tới.
                       </>
                     )}
                   </p>
@@ -264,10 +263,7 @@ export default function Trips() {
           )}
 
           {isEmpty ? (
-            <>
-              <BlankRail />
-              <StepRow />
-            </>
+            <BlankRail />
           ) : (
             <>
               <MetricRail overview={overview} ready={statsReady} />
@@ -315,6 +311,7 @@ export default function Trips() {
                 <p>Nhập 6 ký tự Lead gửi cho bạn. Bạn sẽ vào ngay lịch trình của cả nhóm.</p>
               </div>
               <JoinPanel
+                bare
                 joinCode={joinCode}
                 setJoinCode={setJoinCode}
                 join={join}
@@ -395,11 +392,13 @@ function HeroNow({ overview, ready }) {
   )
 }
 
+// Ba bước chỉ được kể ĐÚNG MỘT LẦN, ở đây. Trước đó danh sách này còn bị lặp
+// lại nguyên văn thành một hàng ba thẻ bên dưới đường ray xem trước.
 function HeroSteps() {
   const steps = [
-    'Tạo chuyến đi, bạn thành Lead',
-    'Chia sẻ mã 6 ký tự cho cả nhóm',
-    'Thả hoạt động vào đường ray giờ'
+    { title: 'Tạo chuyến đi', desc: 'Đặt tên, chọn ngày đi và ngày về. Bạn tự động là Lead.' },
+    { title: 'Chia mã cho nhóm', desc: 'Mỗi chuyến có một mã 6 ký tự. Ai có mã là vào được ngay.' },
+    { title: 'Xếp lịch theo giờ', desc: 'Kéo và thả thẻ hoạt động trên đường ray giờ.' }
   ]
   return (
     <aside className="hero-now">
@@ -407,9 +406,12 @@ function HeroSteps() {
       <p className="eyebrow hn-eyebrow">Ba bước</p>
       <ol className="hn-steps">
         {steps.map((s, i) => (
-          <li key={s}>
+          <li key={s.title}>
             <span className="hn-step-num mono">{String(i + 1).padStart(2, '0')}</span>
-            <span>{s}</span>
+            <span className="hn-step-body">
+              <b>{s.title}</b>
+              {s.desc}
+            </span>
           </li>
         ))}
       </ol>
@@ -422,6 +424,10 @@ function MetricRail({ overview, ready }) {
   // "Cân bằng" phải là KHÔNG CÒN khoản nào cả hai chiều: nợ ở chuyến này không
   // triệt tiêu được khoản người khác nợ mình ở chuyến khác.
   const balanced = overview.iOwe < 1 && overview.owedToMe < 1
+  // Dòng phụ phải NÓI THÊM chứ không lặp lại con số đã in to phía trên:
+  // "460.000 đ / Nhóm cần trả bạn 460.000 đ" là cùng một thông tin hai lần.
+  const owePeople = new Set(overview.debts.filter((d) => d.iPay).map((d) => d.to)).size
+  const owedPeople = new Set(overview.debts.filter((d) => !d.iPay).map((d) => d.from)).size
 
   return (
     <div className="metric-rail">
@@ -469,8 +475,8 @@ function MetricRail({ overview, ready }) {
           balanced
             ? 'Đã cân bằng'
             : owe
-              ? `Bạn cần trả ${fmtVND(overview.iOwe)}`
-              : `Nhóm cần trả bạn ${fmtVND(overview.owedToMe)}`
+              ? `Bạn còn nợ ${owePeople} người`
+              : `${owedPeople} người còn nợ bạn`
         }
       />
     </div>
@@ -656,11 +662,15 @@ function DebtPanel({ overview, ready }) {
   )
 }
 
-function JoinPanel({ joinCode, setJoinCode, join, joining, joinError, joinRef }) {
+function JoinPanel({ joinCode, setJoinCode, join, joining, joinError, joinRef, bare = false }) {
   return (
     <section className="panel panel-join">
-      <div className="eyebrow">Tham gia nhóm</div>
-      <h3 className="join-h">Nhập mã chuyến đi</h3>
+      {!bare && (
+        <>
+          <div className="eyebrow">Tham gia nhóm</div>
+          <h3 className="join-h">Nhập mã chuyến đi</h3>
+        </>
+      )}
       {joinError && (
         <div className="alert alert-error" role="alert">
           {joinError}
@@ -715,25 +725,6 @@ function BlankRail() {
         </div>
       ))}
     </section>
-  )
-}
-
-function StepRow() {
-  const steps = [
-    ['01', 'Tạo chuyến đi', 'Đặt tên, chọn ngày đi và ngày về. Bạn tự động là Lead của chuyến.'],
-    ['02', 'Chia mã cho nhóm', 'Mỗi chuyến có một mã 6 ký tự. Ai có mã là vào được ngay.'],
-    ['03', 'Xếp lịch theo giờ', 'Kéo và thả thẻ hoạt động trên đường ray. Vạch "Bây giờ" tự chạy.']
-  ]
-  return (
-    <div className="step-row">
-      {steps.map(([n, h, p]) => (
-        <section className="step" key={n}>
-          <span className="step-num mono">{n}</span>
-          <h3>{h}</h3>
-          <p>{p}</p>
-        </section>
-      ))}
-    </div>
   )
 }
 
@@ -817,7 +808,7 @@ function CreateTrip({ onClose }) {
     setBusy(false)
     if (mErr) {
       setError(
-        `Đã tạo chuyến đi nhưng chưa thêm được bạn vào danh sách thành viên (${mErr.message}). Bấm "Tạo chuyến đi" lần nữa để thử thêm lại — hệ thống sẽ không tạo trùng chuyến.`
+        `Đã tạo chuyến đi nhưng chưa thêm được bạn vào danh sách thành viên (${mErr.message}). Bấm "Tạo chuyến đi" lần nữa để thử thêm lại. Hệ thống sẽ không tạo trùng chuyến.`
       )
       return
     }

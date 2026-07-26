@@ -7,6 +7,11 @@ import WaterBackground from './WaterBackground'
 export default function AppLayout() {
   return (
     <>
+      {/* Phần tử focus được đầu tiên: bàn phím không phải Tab qua 4 tab và
+          nút Đăng xuất mới tới nội dung. Chỉ hiện khi được focus. */}
+      <a className="skip-link" href="#noi-dung-chinh">
+        Bỏ qua điều hướng
+      </a>
       <div className="wallpaper" aria-hidden="true">
         <WaterBackground variant="wallpaper" />
         <div className="wp-veil" />

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useTrip } from '../context/TripContext'
 import { computeLedger, fmtVND, suggestSettlements } from '../lib/money'
-import { fmtTime, dayKey } from '../lib/schedule'
+import { echoDateTime } from '../lib/format'
 
 export default function Expenses() {
   const { events, members, memberName } = useTrip()
@@ -18,7 +18,7 @@ export default function Expenses() {
   const perHead = members.length ? total / members.length : 0
 
   return (
-    <main className="page">
+    <main className="page" id="noi-dung-chinh" tabIndex={-1}>
       <div className="page-head">
         <div>
           <div className="eyebrow">Chi tiêu</div>
@@ -27,10 +27,6 @@ export default function Expenses() {
       </div>
 
       <div className="stat-grid">
-        <div className="stat">
-          <span className="eyebrow">Tổng chi phí chuyến đi</span>
-          <span className="stat-num">{fmtVND(total)}</span>
-        </div>
         <div className="stat">
           <span className="eyebrow">Trung bình mỗi người</span>
           <span className="stat-num">{fmtVND(perHead)}</span>
@@ -50,9 +46,7 @@ export default function Expenses() {
 
       {/* Bảng cân đối */}
       <section className="panel">
-        <div className="eyebrow section-lbl">
-          Đã trả – phải trả = dư/nợ
-        </div>
+        <div className="eyebrow section-lbl">Số dư của từng người</div>
         <table className="table">
           <thead>
             <tr>
@@ -91,7 +85,7 @@ export default function Expenses() {
         </div>
         {settlements.length === 0 ? (
           <p className="muted m-0">
-            Cả nhóm đã cân bằng — không ai phải trả thêm cho ai.
+            Cả nhóm đã cân bằng. Không ai phải trả thêm cho ai.
           </p>
         ) : (
           <ul className="list-tight">
@@ -131,13 +125,11 @@ export default function Expenses() {
                 <tr key={e.id}>
                   <td>
                     <strong>{e.title}</strong>
-                    <div className="muted mono tiny">
-                      {dayKey(e.start_time)} · {fmtTime(e.start_time)}
-                    </div>
+                    <div className="muted mono tiny">{echoDateTime(e.start_time)}</div>
                   </td>
                   <td>{memberName(e.payer_member_id)}</td>
                   <td className="num">{fmtVND(e.cost)}</td>
-                  <td className="num">{n ? `${fmtVND(e.cost / n)} × ${n}` : '—'}</td>
+                  <td className="num">{n ? `${fmtVND(e.cost / n)} × ${n}` : 'Chưa chia'}</td>
                 </tr>
               )
             })}

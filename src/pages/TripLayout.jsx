@@ -42,7 +42,7 @@ function Shell() {
       <header className="topbar">
         <div>
           <div className="eyebrow">
-            <Link to="/">Chuyến đi</Link> · {isLead ? 'Lead' : 'Member'} · {profile?.full_name}
+            <Link to="/">Chuyến đi</Link> · {profile?.full_name}
           </div>
           <h1>{trip.name}</h1>
         </div>

@@ -215,7 +215,7 @@ export function TripProvider({ tripId, children }) {
     addMember,
     updateMember,
     removeMember,
-    memberName: (id) => members.find((m) => m.id === id)?.display_name ?? '—'
+    memberName: (id) => members.find((m) => m.id === id)?.display_name ?? 'Đã rời nhóm'
   }
 
   return <TripContext.Provider value={value}>{children}</TripContext.Provider>

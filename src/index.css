@@ -106,7 +106,7 @@
      .auth-panel (nền là nước động), .tabs (sticky, nội dung chạy
      dưới), .overlay (chỉ tồn tại khi modal mở, nền đứng yên).
      Mọi bề mặt khác là transparency + gradient + viền sáng.      */
-  --radius-glass: 14px;
+  --radius-glass: var(--r-surface);
   --blur-sticky: blur(18px) saturate(1.4);
   --blur-overlay: blur(16px) saturate(0.85) brightness(0.82);
   /* Viền control tương tác. #628296 chỉ 2.25:1 trên kính mới (vi phạm 1.4.11).
@@ -129,7 +129,23 @@
   --hero-well: rgba(4, 29, 46, 0.62);  /* hộc đèn đồng hồ (đừng < 0.55) */
   --tl-track: rgba(10, 95, 128, 0.26); /* máng timeline + phần chưa xong của thanh tiến độ */
 
-  --radius: 10px;
+  /* ── THANG BO GÓC ─────────────────────────────────────────────
+     MỘT thang duy nhất, có luật: bán kính giảm dần theo độ sâu lồng
+     nhau, đúng quy tắc quang học "bán kính trong = bán kính ngoài
+     trừ padding". Không được đặt giá trị bo góc rời nào ngoài thang.
+       surface 14px  tấm ngoài cùng: panel, modal, hero, thẻ, empty
+       block   10px  khối lồng trong một tấm: .ev, .hero-now
+       control  8px  nút, ô nhập, select, textarea, alert
+       tag      6px  nhãn nhỏ, nút tí hon, ô khảm trong khối
+       pill   999px  chip trạng thái, thanh tiến độ
+       50%           chấm, avatar, nút đóng tròn                    */
+  --r-surface: 14px;
+  --r-block: 10px;
+  --r-control: 8px;
+  --r-tag: 6px;
+  --r-pill: 999px;
+  /* Tên cũ giữ làm alias để các selector hiện có không phải sửa hết */
+  --radius: var(--r-block);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --t-fast: 0.15s;
   --display: 'Bricolage Grotesque', system-ui, sans-serif;
@@ -217,7 +233,6 @@ body {
 .stat,
 .metric,
 .trip-card,
-.step,
 .blank-rail,
 .empty,
 .alert,
@@ -245,6 +260,10 @@ h1, h2, h3, h4 {
 h1 { font-size: 1.9rem; }
 h2 { font-size: 1.35rem; }
 h3 { font-size: 1.05rem; }
+
+/* Chống chữ mồ côi: `pretty` chỉ cân dòng CUỐI nên không đổi nhịp đọc của
+   cả đoạn như `balance` (thứ chỉ hợp với tiêu đề vài dòng). */
+p, li { text-wrap: pretty; }
 
 a { color: var(--ocean); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -296,7 +315,7 @@ input, select, textarea {
   min-height: 40px;
   padding: 9px 12px;
   border: 1px solid var(--rail-ui);
-  border-radius: 9px;
+  border-radius: var(--r-control);
   /* background-COLOR (không phải shorthand): chừa chỗ cho chevron của <select> */
   background-color: var(--n-fill);
   color: var(--ink);
@@ -353,7 +372,7 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 ::-webkit-datetime-edit-day-field,
 ::-webkit-datetime-edit-hour-field,
 ::-webkit-datetime-edit-minute-field,
-::-webkit-datetime-edit-ampm-field { padding: 1px 3px; border-radius: 4px; }
+::-webkit-datetime-edit-ampm-field { padding: 1px 3px; border-radius: 4px; } /* control cua trinh duyet, khong theo thang */
 ::-webkit-datetime-edit-year-field:focus,
 ::-webkit-datetime-edit-month-field:focus,
 ::-webkit-datetime-edit-day-field:focus,
@@ -367,7 +386,7 @@ input[type='datetime-local']::-webkit-calendar-picker-indicator {
   height: 16px;
   padding: 4px;
   margin-inline-start: 6px;
-  border-radius: 6px;
+  border-radius: var(--r-tag);
   opacity: 0.62;
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cg fill='none' stroke='%23145a78' stroke-width='1.4' stroke-linecap='round'%3E%3Crect x='1.7' y='3' width='12.6' height='11.3' rx='2'/%3E%3Cpath d='M1.7 6.6h12.6M5.2 1.6v2.6M10.8 1.6v2.6'/%3E%3C/g%3E%3Ccircle cx='5.4' cy='9.6' r='1' fill='%23e08700'/%3E%3C/svg%3E");
@@ -412,7 +431,7 @@ select {
 .link-btn {
   padding: 3px 6px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--r-tag);
   background: none;
   font-family: var(--body);
   font-size: 0.78rem;
@@ -465,7 +484,7 @@ select {
   gap: 6px;
   padding: 9px 15px;
   border: 1px solid #095875;
-  border-radius: 8px;
+  border-radius: var(--r-control);
   background: linear-gradient(180deg, #0c6e91 0%, #095875 100%);
   color: #fff;
   font-family: var(--body);
@@ -493,7 +512,7 @@ select {
 .topbar .btn-ghost { color: #fff; border-color: rgba(159, 216, 230, 0.68); }
 .topbar .btn-ghost:hover { color: #fff; background: rgba(159, 216, 230, 0.14); border-color: var(--sea-glint); }
 
-.btn-tiny { padding: 4px 9px; font-size: 0.76rem; border-radius: 6px; }
+.btn-tiny { padding: 4px 9px; font-size: 0.76rem; border-radius: var(--r-tag); }
 .btn-danger { background: var(--rose); border-color: var(--rose); }
 .btn-danger:hover { background: var(--rose-deep); border-color: var(--rose-deep); }
 .btn-teal, .btn-ocean { background: var(--ocean); border-color: var(--ocean); }
@@ -528,7 +547,7 @@ select {
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--amber);
-  text-shadow: 0 0 16px rgba(224, 135, 0, 0.4), 0 0 3px rgba(224, 135, 0, 0.25);
+  text-shadow: 0 0 14px rgba(224, 135, 0, 0.32);
 }
 
 /* Thanh tab: nơi DUY NHẤT trong app mà kính mờ có nghĩa khi cuộn —
@@ -646,14 +665,6 @@ select {
   background: var(--g-sheet-hi);
   box-shadow: inset 0 1px 0 var(--g-hi-top);
 }
-.empty::before {
-  content: '· · · · ·';
-  display: block;
-  font-family: var(--mono);
-  letter-spacing: 0.4em;
-  color: var(--txt-2);
-  margin-bottom: 8px;
-}
 
 /* ============================================================
    AUTH TRÊN MẶT NƯỚC — đại dương sâu ban đêm + thẻ kính mờ
@@ -702,7 +713,7 @@ select {
   -webkit-backdrop-filter: blur(14px) saturate(1.25);
   backdrop-filter: blur(14px) saturate(1.25);
   border: 1px solid rgba(159, 216, 230, 0.55);
-  border-radius: 16px;
+  border-radius: var(--r-surface);
   padding: 28px 26px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.65),
@@ -773,7 +784,7 @@ input[type='password']::-ms-clear { display: none; }
   letter-spacing: 0.1em;
   color: var(--txt-2);
   padding: 9px 10px;
-  border-radius: 6px;
+  border-radius: var(--r-tag);
   transition: color var(--t-fast) ease, background var(--t-fast) ease;
 }
 .pw-toggle:hover { color: var(--ocean); background: rgba(10, 95, 128, 0.08); }
@@ -813,7 +824,7 @@ input[type='password']::-ms-clear { display: none; }
 /* Thông báo thành công mount lúc runtime — không được dính delay của stagger */
 .auth-panel > .alert-ok { animation: authRise 0.42s var(--ease-out) 0s; }
 
-.alert { padding: 10px 12px; border-radius: 8px; font-size: 0.86rem; margin-bottom: 14px; }
+.alert { padding: 10px 12px; border-radius: var(--r-control); font-size: 0.86rem; margin-bottom: 14px; }
 .alert-error { background: #fcedf1; color: var(--rose-deep); border: 1px solid #f3c8d3; }
 .alert-ok { background: #e3f2f7; color: var(--ocean-deep); border: 1px solid #b5dbe7; }
 
@@ -872,7 +883,6 @@ input[type='password']::-ms-clear { display: none; }
 .slot[data-status='ongoing']::after {
   background: var(--amber);
   border-color: var(--amber);
-  box-shadow: 0 0 0 4px rgba(224, 135, 0, 0.2);
 }
 .slot[data-status='done']::after { background: var(--ocean-bright); border-color: var(--ocean-bright); }
 .slot[data-status='postponed']::after { border-color: var(--violet); }
@@ -893,7 +903,6 @@ input[type='password']::-ms-clear { display: none; }
   right: 0;
   height: 2px;
   background: var(--amber);
-  box-shadow: 0 0 10px rgba(224, 135, 0, 0.55);
 }
 .now-tag {
   position: relative;
@@ -904,9 +913,9 @@ input[type='password']::-ms-clear { display: none; }
   background: var(--amber);
   color: var(--ink);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--r-tag);
   z-index: 1;
-  box-shadow: 0 0 0 1px rgba(224, 135, 0, 0.3), 0 0 14px rgba(224, 135, 0, 0.4);
+  box-shadow: 0 0 12px rgba(224, 135, 0, 0.42);
 }
 
 /* ---------- Thẻ event ---------- */
@@ -945,6 +954,10 @@ input[type='password']::-ms-clear { display: none; }
 .ev-title { font-family: var(--display); font-weight: 700; font-size: 1.02rem; flex: 1; }
 .ev-title.completed::after { content: ' ✓'; color: var(--teal); }
 .ev-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; font-size: 0.84rem; color: var(--txt-2); }
+.ev-place { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+/* Ghim thẳng hàng với chữ: hạ 1px vì trọng tâm quang học của hình giọt nằm
+   cao hơn tâm hình học của nó. */
+.ev-place svg { flex: none; width: 13px; height: 13px; opacity: 0.75; transform: translateY(1px); }
 .ev-desc { margin: 8px 0 0; font-size: 0.88rem; color: var(--txt-2); }
 .ev-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 11px; padding-top: 10px; border-top: 1px solid var(--rule); flex-wrap: wrap; }
 .ev-cost { font-family: var(--mono); font-size: 0.88rem; font-weight: 700; }
@@ -970,7 +983,7 @@ input[type='password']::-ms-clear { display: none; }
   align-items: center;
   gap: 5px;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--rail-ui);
   font-family: var(--mono);
   font-size: var(--label);
@@ -986,13 +999,15 @@ input[type='password']::-ms-clear { display: none; }
 .chip[data-tone='cancelled'] { color: var(--rose-ink); border-color: var(--rose-ink); }
 .chip[data-tone='pending'] { color: #fff; background: var(--violet); border-color: var(--violet); }
 .chip[data-tone='cat'] { color: var(--ocean-deep); background: #e1f1f6; border-color: #b8dcea; }
+/* Đếm bằng 0: lùi hẳn về nền, đừng tranh chỗ với những trạng thái có thật. */
+.chip[data-tone='zero'] { color: var(--txt-2); opacity: 0.6; }
 
 .avatars { display: flex; flex-wrap: wrap; gap: 5px; }
 .pill {
   font-size: 0.76rem;
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid var(--rail-ui);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 1px 9px;
 }
 .pill[data-payer='true'] { background: var(--ink); color: #fff; border-color: var(--ink); }
@@ -1051,9 +1066,12 @@ input[type='password']::-ms-clear { display: none; }
 
 /* Đầu: không còn dải navy đặc, cùng một tấm kính, tách bằng một sợi kẻ */
 .modal-head {
-  flex: 0 1 auto;
-  min-height: 0;
-  overflow: hidden;
+  /* KHÔNG được co. Trước đây là `flex: 0 1 auto` + `overflow: hidden`: khi
+     nội dung form cao hơn modal, flex lấy chỗ thiếu từ phần đầu và phần
+     `overflow` lặng lẽ cắt cụt dòng phụ giữa câu. Chỗ thiếu phải lấy từ
+     .modal-body vì nó là thứ DUY NHẤT được cuộn. Màn hình quá thấp đã có
+     khối @media (max-height: 480px) ở cuối file lo. */
+  flex: none;
   position: relative;
   display: flex;
   align-items: flex-start;
@@ -1076,14 +1094,8 @@ input[type='password']::-ms-clear { display: none; }
   margin: 0 0 5px;
   color: var(--accent-txt);
 }
-.modal-kicker::before {
-  content: '';
-  width: 14px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--accent-txt);
-  opacity: 0.55;
-}
+/* Trước đây có một gạch trang trí 14px đứng ngay trước chữ. Nó không mang
+   thông tin gì mà lại đọc ra thành dấu gạch ngang: "— Chuyến đi mới". */
 .modal-sub { margin: 7px 0 0; max-width: 48ch; font-size: 0.84rem; line-height: 1.45; color: var(--txt-2); }
 
 /* Nút đóng: vùng bấm 40×40, icon SVG nét */
@@ -1121,7 +1133,7 @@ input[type='password']::-ms-clear { display: none; }
 .modal-body::-webkit-scrollbar-track { background: transparent; }
 .modal-body::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(10, 95, 128, 0.32);
   background-clip: content-box;
 }
@@ -1143,7 +1155,7 @@ input[type='password']::-ms-clear { display: none; }
 .modal[data-bottom='false'] .modal-foot { box-shadow: 0 -14px 18px -16px rgba(2, 14, 24, 0.7); }
 .modal-foot-note { margin-right: auto; font-size: 0.78rem; color: var(--txt-2); }
 
-.modal .alert { border-radius: 10px; padding: 11px 13px; }
+.modal .alert { border-radius: var(--r-control); padding: 11px 13px; }
 .modal .alert-error { background: rgba(252, 237, 241, 0.94); border-color: #e2adbc; }
 .modal .alert-ok { background: rgba(227, 242, 247, 0.94); border-color: #9ccadb; }
 .modal .alert:focus-visible { outline: 2px solid var(--rose-deep); outline-offset: 2px; }
@@ -1168,7 +1180,7 @@ input[type='password']::-ms-clear { display: none; }
   margin: 0;
   padding: 4px 13px 4px 5px;
   border: 1px solid var(--rail-ui);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: rgba(255, 255, 255, 0.72);
   font-size: 0.86rem;
   font-weight: 500;
@@ -1227,7 +1239,14 @@ input[type='password']::-ms-clear { display: none; }
 .neg { color: var(--rose-ink); font-weight: 700; }
 
 /* ---------- Thống kê ---------- */
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 14px; }
+/* Chặn trên 260px: nếu không, trang chỉ có 2 ô số thì mỗi ô phình ra nửa
+   màn hình để đựng đúng một con số ngắn. Chặn dưới cho phép xuống hàng. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 260px));
+  justify-content: start;
+  gap: 14px;
+}
 .stat {
   background: var(--g-sheet);
   border: 1px solid var(--g-edge);
@@ -1235,16 +1254,30 @@ input[type='password']::-ms-clear { display: none; }
   padding: var(--pad-card-sm);
   box-shadow: inset 0 2px 0 var(--ocean), inset 0 -1px 0 var(--g-hi-bot), var(--sh-glass);
 }
-.stat-num { font-family: var(--mono); font-size: var(--num-lg); font-weight: 700; letter-spacing: -0.04em; display: block; margin-top: 2px; color: var(--ocean-deep); overflow-wrap: anywhere; }
+/* `overflow-wrap: anywhere` de tran o, nhung no de len ca dau cach khong
+   ngat (U+00A0) ma Intl dat giua so va ky hieu -> "1.110.000" o dong tren,
+   "d" roi xuong dong duoi, keo cao ca hang o. So tien phai nam tren MOT
+   dong; chuc nang chong tran chuyen sang co chu co gian. */
+.stat-num {
+  font-family: var(--mono);
+  font-size: clamp(1.1rem, 1.1vw + 0.45rem, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  display: block;
+  margin-top: 2px;
+  color: var(--ocean-deep);
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
 
 .bars { display: grid; gap: 9px; }
 .bar-row { display: grid; grid-template-columns: 130px 1fr 46px; align-items: center; gap: 10px; font-size: 0.86rem; }
-.bar-track { height: 12px; background: var(--n-fill-lo); border-radius: 999px; overflow: hidden; border: 1px solid var(--rule); }
+.bar-track { height: 12px; background: var(--n-fill-lo); border-radius: var(--r-pill); overflow: hidden; border: 1px solid var(--rule); }
 .bar-fill {
   display: block;
   height: 100%;
   background: linear-gradient(90deg, var(--ocean-deep) 0%, var(--ocean) 55%, var(--ocean-bright) 100%);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   transition: width 0.6s var(--ease-out);
 }
 .bar-row .num { font-family: var(--mono); text-align: right; font-weight: 700; }
@@ -1297,7 +1330,7 @@ input[type='password']::-ms-clear { display: none; }
   color: var(--sea-glint);
   box-shadow: inset 0 0 0 1px rgba(159, 216, 230, 0.22);
   padding: 3px 9px;
-  border-radius: 6px;
+  border-radius: var(--r-tag);
   font-size: 0.8rem;
 }
 
@@ -1311,6 +1344,30 @@ input[type='password']::-ms-clear { display: none; }
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+
+/* Liên kết bỏ qua điều hướng: ẩn cho tới khi được focus bằng bàn phím.
+   Dùng transform chứ không dùng `display:none` — phần tử ẩn kiểu đó
+   không nhận được focus nên liên kết sẽ chết. */
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 60;
+  padding: 10px 16px;
+  border-radius: var(--r-control);
+  background: var(--sea-deep);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  border: 1px solid var(--sea-glint);
+  box-shadow: 0 12px 28px -12px rgba(4, 29, 46, 0.8);
+  transform: translateY(calc(-100% - 20px));
+  transition: transform var(--t-fast) var(--ease-out);
+}
+.skip-link:focus-visible { transform: translateY(0); text-decoration: none; }
+/* Vùng nội dung nhận focus qua liên kết trên: không vẽ vòng focus quanh cả
+   trang, người dùng đã thấy trang cuộn tới đúng chỗ. */
+#noi-dung-chinh:focus { outline: none; }
 
 .dash { display: grid; gap: 24px; }
 .dash > * { animation: dashIn 0.46s var(--ease-out) backwards; }
@@ -1388,7 +1445,7 @@ input[type='password']::-ms-clear { display: none; }
   color: var(--ocean-deep);
 }
 .hero-link {
-  border: none; background: none; padding: 6px 2px; border-radius: 6px; cursor: pointer;
+  border: none; background: none; padding: 6px 2px; border-radius: var(--r-tag); cursor: pointer;
   font-family: var(--body); font-size: 0.88rem; font-weight: 700;
   color: #cfe6f2;
   text-decoration: underline;
@@ -1404,7 +1461,7 @@ input[type='password']::-ms-clear { display: none; }
   display: flex; flex-direction: column; gap: 11px;
   min-width: 0;
   padding: 14px 15px;
-  border-radius: 12px;
+  border-radius: var(--r-block);
   border: 1px solid rgba(159, 216, 230, 0.34);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%),
@@ -1419,7 +1476,7 @@ input[type='password']::-ms-clear { display: none; }
 .hn-well {
   display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
   padding: 7px 11px;
-  border-radius: 9px;
+  border-radius: var(--r-tag);
   background: var(--hero-well);
   border: 1px solid rgba(159, 216, 230, 0.16);
   box-shadow: inset 0 1px 0 rgba(4, 29, 46, 0.6), inset 0 -1px 0 rgba(159, 216, 230, 0.08);
@@ -1446,6 +1503,9 @@ input[type='password']::-ms-clear { display: none; }
 .hn-idle { font-size: 0.88rem; color: #cfe6f2; }
 .hn-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
 .hn-steps li { display: flex; align-items: baseline; gap: 10px; font-size: 0.9rem; color: #cfe6f2; }
+.hn-step-body { display: block; }
+.hn-step-body b { display: block; color: #fff; font-weight: 700; }
+.hn-step-body { color: #b9d6e6; line-height: 1.4; }
 .hn-step-num { flex: none; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; color: var(--sea-glint); }
 
 /* ---------- Hàng chỉ số ---------- */
@@ -1495,7 +1555,7 @@ input[type='password']::-ms-clear { display: none; }
    --amber-ink, viền dùng --amber-edge; amber thuần chỉ làm phần tô. */
 .tc-live {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 2px 8px; border-radius: 999px;
+  padding: 2px 8px; border-radius: var(--r-pill);
   border: 1px solid var(--amber-edge);
   background: var(--amber-soft);
   font-family: var(--mono); font-size: 0.68rem; font-weight: 700;
@@ -1510,9 +1570,10 @@ input[type='password']::-ms-clear { display: none; }
 }
 /* Mini-timeline: 1 cột = 1 ngày, chiều cao = số hoạt động của ngày đó */
 .tl { display: flex; align-items: flex-end; justify-content: flex-start; gap: 3px; height: 34px; margin: 0 0 12px; }
-/* max-width: chuyến 2-3 ngày thì cột không phình thành khối lớn */
+/* max-width phải NHỎ: chuyến 2 ngày mà cột rộng 26px thì hai cột đầy trông
+   như hai ô màu đặc, không ai đọc ra đó là biểu đồ theo ngày. */
 .tl-col {
-  position: relative; flex: 1 1 0; min-width: 3px; max-width: 26px; height: 100%;
+  position: relative; flex: 1 1 0; min-width: 3px; max-width: 12px; height: 100%;
   display: flex; align-items: flex-end;
   border-radius: 2px;
   background: var(--tl-track);
@@ -1560,7 +1621,9 @@ input[type='password']::-ms-clear { display: none; }
 .debt-amt { flex: none; font-size: 0.86rem; }
 
 .join-h { margin: 4px 0 12px; }
-.join-form { display: flex; gap: 8px; }
+.join-form { display: flex; gap: 8px; align-items: stretch; }
+.join-form .join-input { flex: 1 1 auto; min-width: 0; }
+.join-form .btn { flex: none; white-space: nowrap; }
 .join-input { letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; }
 .create-note { font-size: 0.84rem; margin-bottom: 0; }
 .dash-join { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 430px); align-items: center; gap: 24px 44px; }
@@ -1568,7 +1631,7 @@ input[type='password']::-ms-clear { display: none; }
 .join-note p { margin: 0; max-width: 40ch; color: var(--txt-2); }
 
 /* ---------- Trạng thái rỗng ---------- */
-.blank-rail, .step {
+.blank-rail {
   background: var(--g-sheet);
   border: 1px solid var(--g-edge);
   border-radius: var(--radius-glass);
@@ -1582,23 +1645,18 @@ input[type='password']::-ms-clear { display: none; }
 .ghost-row:last-child { border-bottom: none; padding-bottom: 0; }
 .ghost-time { font-size: 0.86rem; font-weight: 700; color: var(--txt-2); }
 .ghost-bars { position: relative; display: block; }
-.ghost-bar { display: block; height: 12px; border-radius: 999px; background: rgba(10, 95, 128, 0.16); }
+.ghost-bar { display: block; height: 12px; border-radius: var(--r-pill); background: rgba(10, 95, 128, 0.16); }
 .ghost-bar + .ghost-bar { margin-top: 7px; height: 8px; background: rgba(10, 95, 128, 0.09); }
 .ghost-now {
   position: absolute; right: 0; top: -2px;
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
   background: var(--amber); color: var(--ink);
-  padding: 1px 6px; border-radius: 4px;
+  padding: 1px 6px; border-radius: var(--r-tag);
 }
-.step-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
-.step { padding: var(--pad-card); }
-.step-num { display: block; font-size: var(--num-md); font-weight: 700; letter-spacing: -0.04em; color: var(--ocean); }
-.step h3 { margin: 7px 0 5px; font-size: 1rem; }
-.step p { margin: 0; font-size: 0.88rem; color: var(--txt-2); }
 
 /* ---------- Skeleton: đúng hình dạng kết quả cuối, không spinner ---------- */
 .sk {
-  display: block; border-radius: 6px;
+  display: block; border-radius: var(--r-tag);
   background:
     linear-gradient(100deg, rgba(10,95,128,.14) 22%, rgba(10,95,128,.05) 42%, rgba(10,95,128,.14) 62%)
     0 0 / 260% 100%;
@@ -1608,7 +1666,7 @@ input[type='password']::-ms-clear { display: none; }
 .sk-line--short { width: 55%; }
 .sk-num { height: 24px; width: 66%; margin: 4px 0 6px; }
 .sk-title { height: 17px; width: 62%; margin: 4px 0 10px; }
-.sk-chip { height: 18px; width: 62px; border-radius: 999px; }
+.sk-chip { height: 18px; width: 62px; border-radius: var(--r-pill); }
 .sk-chip--wide { width: 92px; }
 .sk-tl { height: 34px; border-radius: 3px; margin: 0 0 12px; }
 .trip-card--sk { pointer-events: none; }
@@ -1669,7 +1727,7 @@ input[type='password']::-ms-clear { display: none; }
   .hero-sea { background: linear-gradient(158deg, var(--navy-3) 0%, var(--sea-deep) 100%); }
   .hero-now { background: var(--sea-deep-2); }
   .hn-well { background: #031320; }
-  .metric, .trip-card, .step, .blank-rail, .stat { background: var(--g-sheet); }
+  .metric, .trip-card, .blank-rail, .stat { background: var(--g-sheet); }
   .panel-now, .panel-join, .panel-pending { background: var(--g-sheet-hi); }
   .tl-col { background: #dbe9f0; }
   .trip-card::before {
@@ -1694,7 +1752,7 @@ input[type='password']::-ms-clear { display: none; }
     --rule-2: #0a3150;
     color: #12293a !important;
   }
-  .panel, .stat, .empty, .ev, .modal, .metric, .trip-card, .step, .blank-rail {
+  .panel, .stat, .empty, .ev, .modal, .metric, .trip-card, .blank-rail {
     background: #fff !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
@@ -1744,7 +1802,6 @@ input[type='password']::-ms-clear { display: none; }
   .topbar, .tabs { padding-left: 14px; padding-right: 14px; }
   /* .tabs xuống 2 dòng: chi phí backdrop nhân đôi mỗi frame cuộn -> nền đặc. */
   .tabs { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--gd-solid); }
-  .panel, .stat, .empty { border-radius: 12px; }
 
   /* Bottom-sheet: tầm với ngón cái + bàn phím ảo đẩy từ dưới lên.
      .modal-body là scroller DUY NHẤT nên trình duyệt tự đưa ô đang focus vào
@@ -1770,7 +1827,7 @@ input[type='password']::-ms-clear { display: none; }
     left: 50%;
     width: 40px;
     height: 4px;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     background: rgba(10, 95, 128, 0.26);
     transform: translateX(-50%);
   }
@@ -1781,19 +1838,17 @@ input[type='password']::-ms-clear { display: none; }
   .modal-foot-note { flex-basis: 100%; margin: 0 0 6px; text-align: center; order: -1; }
 
   .dash { gap: 18px; }
-  .hero-sea { padding: 20px 16px 18px; border-radius: 12px; }
+  .hero-sea { padding: 20px 16px 18px; }
   .hero-now { padding: 13px; }
   .hn-clock { font-size: 1.3rem; }
   .metric-rail { gap: 10px; }
   .metric { padding: 12px 12px 11px; }
-  .metric, .trip-card, .step, .blank-rail { border-radius: 12px; }
   .trip-card { padding: 15px 14px; }
   .tc-code { margin-left: 0; }
   .tl { gap: 1px; height: 30px; }
   .soon-row { grid-template-columns: 50px minmax(0, 1fr); gap: 9px; }
   .ghost-row { grid-template-columns: 54px minmax(0, 1fr); gap: 10px; }
   .blank-rail { padding: 14px 14px 18px; }
-  .step-row { grid-template-columns: 1fr; }
   .join-form { flex-wrap: wrap; }
   .join-form .btn { flex: 1 0 auto; justify-content: center; }
 }

@@ -29,7 +29,7 @@ export default function Schedule() {
   }
 
   return (
-    <main className="page">
+    <main className="page" id="noi-dung-chinh" tabIndex={-1}>
       <div className="page-head">
         <div>
           <div className="eyebrow">Lịch trình</div>
@@ -60,7 +60,7 @@ export default function Schedule() {
       {waiting.length > 0 && (
         <section className="panel panel-pending">
           <div className="eyebrow section-lbl">
-            Chờ duyệt · {waiting.length} hoạt động {isLead ? '— bạn cần xem qua' : ''}
+            Chờ duyệt · {waiting.length} hoạt động {isLead ? '· bạn cần xem qua' : ''}
           </div>
           <div className="stack-10">
             {waiting.map((e) => (

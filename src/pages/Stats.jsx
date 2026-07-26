@@ -41,7 +41,7 @@ export default function Stats() {
   }, [approvedEvents])
 
   return (
-    <main className="page">
+    <main className="page" id="noi-dung-chinh" tabIndex={-1}>
       <div className="page-head">
         <div>
           <div className="eyebrow">Thống kê nhanh</div>
@@ -85,7 +85,7 @@ export default function Stats() {
               <li key={e.id}>
                 <strong>{e.title}</strong>{' '}
                 <span className="mono muted">
-                  {fmtTime(e.start_time)}–{fmtTime(e.end_time)}
+                  {fmtTime(e.start_time)}-{fmtTime(e.end_time)}
                 </span>
               </li>
             ))}
@@ -100,7 +100,9 @@ export default function Stats() {
         </div>
         <div className="btn-row">
           {byStatus.map((s) => (
-            <span key={s.label} className="chip" data-tone={s.tone}>
+            // Amber là điểm nóng DUY NHẤT của app, dành cho "đang diễn ra ngay
+            // lúc này". Tô nó lên một con số 0 là kéo mắt về chỗ không có gì.
+            <span key={s.label} className="chip" data-tone={s.count ? s.tone : 'zero'}>
               {s.label}: {s.count}
             </span>
           ))}
@@ -132,7 +134,7 @@ export default function Stats() {
         )}
         {topSpender && total > 0 && (
           <p className="muted note-foot">
-            Người ứng nhiều nhất: <strong>{topSpender.member.display_name}</strong> — {fmtVND(topSpender.paid)}
+            Người ứng nhiều nhất: <strong>{topSpender.member.display_name}</strong>, {fmtVND(topSpender.paid)}
           </p>
         )}
       </section>

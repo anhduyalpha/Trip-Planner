@@ -46,9 +46,26 @@ export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onM
           {categoryLabel(event.category)}
         </span>
         <span className="mono">
-          {fmtTime(event.start_time)}–{fmtTime(event.end_time)} · {fmtDuration(event.start_time, event.end_time)}
+          {fmtTime(event.start_time)}-{fmtTime(event.end_time)} · {fmtDuration(event.start_time, event.end_time)}
         </span>
-        {event.location && <span>📍 {event.location}</span>}
+        {/* Emoji 📍 render ra một hình nhiều màu do hệ điều hành vẽ, lạc hẳn
+            khỏi bảng màu hai tông của app và mỗi máy một kiểu. Dùng nét vẽ
+            cùng độ dày 1.8 với icon đóng modal. */}
+        {event.location && (
+          <span className="ev-place">
+            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path
+                d="M8 14.5S13 10 13 6.5a5 5 0 0 0-10 0C3 10 8 14.5 8 14.5Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+              />
+              <circle cx="8" cy="6.4" r="1.7" fill="none" stroke="currentColor" strokeWidth="1.8" />
+            </svg>
+            {event.location}
+          </span>
+        )}
       </div>
 
       {event.description && <p className="ev-desc">{event.description}</p>}
