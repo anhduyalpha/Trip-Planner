@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 
 // ============================================================
-//  Nền mặt nước cho trang đăng nhập / đăng ký.
-//  WebGL thuần, 1 pass: sóng nền (4 sin định hướng) + tối đa 16
-//  gợn sóng theo chuột (vành sin mở rộng, tắt dần theo thời gian
-//  và khoảng cách). Không thêm thư viện.
+//  Nền mặt nước cho trang đăng nhập / đăng ký (v2).
+//  WebGL thuần, 1 pass. Sóng nền = 4 sin định hướng + 2 lớp
+//  value-noise cuộn ngược chiều (bề mặt hữu cơ, không lặp).
+//  Con trỏ tạo MỘT vệt hõm ellipse mượt kéo dãn theo vận tốc
+//  (không phải chuỗi vành rời rạc); click tạo cặp vành lan tỏa.
 //  Fallback: reduced-motion -> gradient tĩnh; không WebGL -> gradient động.
 // ============================================================
 
-const MAX_RIPPLES = 16
+const MAX_RIPPLES = 8
 
 const VERT = `
 attribute vec2 a_pos;
@@ -29,16 +30,34 @@ varying vec2 v_uv;
 uniform float u_time;
 uniform vec2 u_res;
 uniform vec4 u_ripples[${MAX_RIPPLES}];
+uniform vec2 u_mouse;
+uniform vec2 u_mouseVel;
+uniform float u_mouseAmp;
+
+const vec3 DEEP = vec3(0.004, 0.016, 0.047);
+const vec3 MID  = vec3(0.009, 0.093, 0.220);
+const vec3 SHAL = vec3(0.042, 0.290, 0.442);
+const vec3 SKY  = vec3(0.28, 0.44, 0.58);
+const vec3 FOAM = vec3(0.62, 0.82, 0.90);
+
+float hash21(vec2 q) { return fract(sin(dot(q, vec2(127.1, 311.7))) * 43758.5453); }
+float vnoise(vec2 q) {
+  // mod 289 chặn tọa độ lưới: t chạy cả giờ cũng không làm sin() mất chính xác
+  vec2 i = mod(floor(q), 289.0);
+  vec2 f = fract(q);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), u.x),
+             mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), u.x), u.y);
+}
 
 float ambient(vec2 p, float t) {
   float h = 0.0;
-  h += 0.0140 * sin(dot(p, vec2( 1.0,  0.6)) * 11.0  + t * 0.9);
-  h += 0.0100 * sin(dot(p, vec2(-0.7,  1.0)) * 17.0  + t * 1.3 + 2.1);
-  h += 0.0060 * sin(dot(p, vec2( 0.9, -0.4)) * 29.0  + t * 1.8 + 4.0);
-  h += 0.0035 * sin(dot(p, vec2(-0.3, -1.0)) * 47.0  + t * 2.6 + 1.2);
-  h += 0.0022 * sin(dot(p, vec2( 0.6,  0.9)) * 76.0  + t * 3.4 + 3.3);
-  h += 0.0014 * sin(dot(p, vec2(-0.9,  0.2)) * 118.0 + t * 4.4 + 5.7);
-  h += 0.0005 * sin(dot(p, vec2( 0.2,  1.0)) * 150.0 + t * 5.9 + 0.8);
+  h += 0.0110 * sin(dot(p, vec2( 1.0,  0.55)) * 9.0  + t * 0.8);
+  h += 0.0070 * sin(dot(p, vec2(-0.72, 1.0 )) * 16.0 + t * 1.25 + 2.1);
+  h += (vnoise(p * 3.2 + vec2(0.18, 0.26) * t) - 0.5) * 0.0170;
+  h += (vnoise(p * 6.8 - vec2(0.24, 0.17) * t) - 0.5) * 0.0080;
+  h += 0.0028 * sin(dot(p, vec2( 0.9, -0.4)) * 41.0 + t * 2.6 + 4.0);
+  h += 0.0014 * sin(dot(p, vec2(-0.35, -1.0)) * 71.0 + t * 3.6 + 1.2);
   return h;
 }
 
@@ -51,15 +70,31 @@ float ripples(vec2 p, float t) {
     if (age < 0.0 || age > 3.0) continue;
     float d = length(p - r.xy);
     float front = d - age * 0.25;
-    h += 0.5 * r.w * sin(front * 60.0)
-             * exp(-front * front * 900.0)
-             * exp(-age * 2.2)
-             * exp(-d * 1.5);
+    float f2 = front + 0.045;
+    float ring  = sin(front * 60.0) * exp(-front * front * 900.0);
+    float ring2 = sin(f2 * 60.0) * exp(-f2 * f2 * 900.0);
+    h += 0.5 * r.w * (ring + 0.45 * ring2) * exp(-age * 2.2) * exp(-d * 1.5);
   }
   return h;
 }
 
-float height(vec2 p, float t) { return ambient(p, t) + ripples(p, t); }
+// Vệt nước theo con trỏ: hõm ellipse kéo dãn ngược hướng vận tốc.
+// Mượt tuyệt đối ở mọi tốc độ — không bao giờ sinh vành rời rạc.
+float wake(vec2 p) {
+  if (u_mouseAmp < 0.003) return 0.0;
+  float speed = length(u_mouseVel);
+  vec2 dir = speed > 1e-4 ? u_mouseVel / speed : vec2(1.0, 0.0);
+  float elong = min(speed * 0.12, 0.20);
+  vec2 q = p - (u_mouse - dir * elong * 0.6);
+  float a = dot(q, dir);
+  float o = q.x * dir.y - q.y * dir.x;
+  float ra = 0.06 + elong;
+  float g = exp(-(a * a) / (ra * ra) - (o * o) / 0.0036);
+  float depth = 0.35 + 0.65 * min(speed / 1.1, 1.0);
+  return -0.022 * u_mouseAmp * depth * g;
+}
+
+float height(vec2 p, float t) { return ambient(p, t) + ripples(p, t) + wake(p); }
 
 void main() {
   vec2 p = v_uv;
@@ -70,24 +105,45 @@ void main() {
   float h0 = height(p, t);
   float hx = height(p + vec2(e, 0.0), t);
   float hy = height(p + vec2(0.0, e), t);
-  vec3 n = normalize(vec3((h0 - hx) / e, (h0 - hy) / e, 1.6));
+  vec2 grad = vec2(h0 - hx, h0 - hy) / e;
+  vec3 n  = normalize(vec3(grad, 1.6));
+  vec3 nS = normalize(vec3(grad, 0.35));
 
   vec3 l = normalize(vec3(-0.4, 0.6, 0.55));
-  vec3 hvec = normalize(l + vec3(0.0, 0.0, 1.0));
+  vec3 hv = normalize(l + vec3(0.0, 0.0, 1.0));
   float diff = max(dot(n, l), 0.0);
-  float ndh = max(dot(n, hvec), 0.0);
-  float sheen = pow(ndh, 18.0) * 0.08;
-  float sparkle = smoothstep(0.972, 0.994, ndh) * 0.85;
-  float fresnel = pow(1.0 - max(n.z, 0.0), 2.0);
+  float ndh = max(dot(n, hv), 0.0);
 
-  vec3 deep    = vec3(0.002, 0.030, 0.040);
-  vec3 shallow = vec3(0.022, 0.180, 0.200);
-  vec3 foam    = vec3(0.45, 0.70, 0.70);
+  // Thân nước: navy -> xanh đại dương -> cyan
+  float depthT = clamp(0.42 + h0 * 9.0 + diff * 0.35, 0.0, 1.0);
+  vec3 col = mix(DEEP, MID, smoothstep(0.0, 0.62, depthT));
+  col = mix(col, SHAL, smoothstep(0.62, 1.0, depthT));
 
-  vec3 col = mix(deep, shallow, clamp(0.32 + h0 * 7.0 + diff * 0.45, 0.0, 1.0));
-  col = mix(col, foam, fresnel * 0.30);
-  col += (sheen + sparkle) * vec3(1.0, 0.93, 0.78);
-  col *= 1.0 - 0.35 * smoothstep(0.45, 1.1, length(v_uv - 0.5) * 1.6);
+  // "Trong": ánh cyan xuyên qua đỉnh sóng (subsurface wrap-diffuse)
+  float wrap = clamp((dot(n, l) + 0.6) / 1.6, 0.0, 1.0);
+  float sss = wrap * wrap * clamp(h0 * 18.0 + 0.25, 0.0, 1.0);
+  col += vec3(0.015, 0.10, 0.13) * sss;
+
+  // Lăn tăn caustic trôi ngược chiều nhau, chỉ ở vùng sáng
+  float c1 = vnoise(p * 9.0  + vec2( 0.30, -0.22) * t);
+  float c2 = vnoise(p * 11.0 - vec2( 0.26, -0.19) * t);
+  float caus = pow(clamp((c1 + c2 - 1.0) * 1.9, 0.0, 1.0), 2.4);
+  col += vec3(0.04, 0.16, 0.18) * caus * smoothstep(0.35, 0.95, depthT);
+
+  // Phản chiếu trời: mặt phẳng nhìn xuyên xuống đáy, mặt nghiêng bắt trời
+  float fres = pow(1.0 - max(nS.z, 0.0), 2.0);
+  col = mix(col, SKY, min(fres, 0.75));
+
+  // Bọt ở đỉnh cao (vành click; thi thoảng đỉnh sóng trùng pha)
+  float crest = smoothstep(0.022, 0.055, h0);
+  col = mix(col, FOAM, crest * 0.55);
+
+  // Specular ấm — giữ chất premium đêm
+  float sheen = pow(ndh, 24.0) * 0.10;
+  float sparkle = smoothstep(0.975, 0.995, ndh) * 0.9;
+  col += (sheen + sparkle) * vec3(1.0, 0.95, 0.82);
+
+  col *= 1.0 - 0.30 * smoothstep(0.45, 1.1, length(v_uv - 0.5) * 1.6);
   gl_FragColor = vec4(sqrt(col), 1.0);
 }
 `
@@ -152,6 +208,9 @@ export default function WaterBackground() {
     const uTime = gl.getUniformLocation(program, 'u_time')
     const uRes = gl.getUniformLocation(program, 'u_res')
     const uRipples = gl.getUniformLocation(program, 'u_ripples')
+    const uMouse = gl.getUniformLocation(program, 'u_mouse')
+    const uMouseVel = gl.getUniformLocation(program, 'u_mouseVel')
+    const uMouseAmp = gl.getUniformLocation(program, 'u_mouseAmp')
 
     // ---------- Kích thước / DPR ----------
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5)
@@ -168,43 +227,67 @@ export default function WaterBackground() {
     const ro = new ResizeObserver(() => size())
     ro.observe(canvas)
 
-    // ---------- Gợn sóng theo chuột ----------
+    // ---------- Tọa độ chuột -> uv aspect-corrected ----------
+    const toUV = (clientX, clientY) => {
+      const r = canvas.getBoundingClientRect()
+      if (!r.width || !r.height) return null
+      return [((clientX - r.left) / r.width) * (r.width / r.height), 1 - (clientY - r.top) / r.height]
+    }
+
+    // ---------- Vành sóng khi click ----------
     const ripples = new Float32Array(MAX_RIPPLES * 4)
     let cursor = 0
     let t = 0
-    let lastX = 0
-    let lastY = 0
-    let lastInjectAt = 0
 
     const inject = (clientX, clientY, strength) => {
-      const r = canvas.getBoundingClientRect()
-      if (!r.width || !r.height) return
-      const aspect = r.width / r.height
-      const x = ((clientX - r.left) / r.width) * aspect
-      const y = 1 - (clientY - r.top) / r.height
+      const uv = toUV(clientX, clientY)
+      if (!uv) return
       const i = cursor * 4
-      ripples[i] = x
-      ripples[i + 1] = y
+      ripples[i] = uv[0]
+      ripples[i + 1] = uv[1]
       ripples[i + 2] = t
       ripples[i + 3] = strength
       cursor = (cursor + 1) % MAX_RIPPLES
     }
+    const onDown = (e) => inject(e.clientX, e.clientY, 0.6)
+
+    // ---------- Wake theo con trỏ: pointermove chỉ ghi target thô ----------
+    let tgx = 0
+    let tgy = 0
+    let mx = 0
+    let my = 0
+    let pvx = 0
+    let pvy = 0
+    let wvx = 0
+    let wvy = 0
+    let amp = 0
+    let lastMoveTs = -1e9
 
     const onMove = (e) => {
-      const now = performance.now()
-      const dist = Math.hypot(e.clientX - lastX, e.clientY - lastY)
-      const dt = now - lastInjectAt
-      if (dist > 40 || dt > 90) {
-        const speed = dt > 0 ? dist / (dt / 1000) : 0
-        inject(e.clientX, e.clientY, Math.min(Math.max(speed / 2000, 0.08), 0.35))
-        lastX = e.clientX
-        lastY = e.clientY
-        lastInjectAt = now
+      const uv = toUV(e.clientX, e.clientY)
+      if (!uv) return
+      tgx = uv[0]
+      tgy = uv[1]
+      lastMoveTs = performance.now()
+      // Con trỏ mới vào (hoặc quay lại sau khi wake đã tắt): snap để không có
+      // vệt quét ngang màn hình từ vị trí cũ và không có xung vận tốc giả.
+      if (amp < 0.05) {
+        mx = tgx
+        my = tgy
+        pvx = tgx
+        pvy = tgy
+        wvx = 0
+        wvy = 0
       }
     }
-    const onDown = (e) => inject(e.clientX, e.clientY, 0.6)
+    const onLeave = () => {
+      lastMoveTs = -1e9
+      amp = 0 // tắt wake ngay: quay lại tab/chạm điểm khác sẽ snap, không có vệt quét
+    }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerdown', onDown)
+    window.addEventListener('blur', onLeave)
+    document.addEventListener('pointerleave', onLeave)
 
     // ---------- Vòng lặp vẽ ----------
     // Cờ `running` đảm bảo chỉ có đúng một chuỗi rAF: mount trong tab ẩn
@@ -214,12 +297,37 @@ export default function WaterBackground() {
     let last = performance.now()
     const frame = (now) => {
       if (!running) return
-      t += Math.min(now - last, 100) / 1000
+      const dt = Math.max(0, Math.min(now - last, 100)) / 1000
+      t += dt
       last = now
+
+      // Làm mượt vị trí / vận tốc / phong bì wake (dt-correct, không lệ thuộc fps)
+      const kPos = 1 - Math.exp(-dt * 10)
+      mx += (tgx - mx) * kPos
+      my += (tgy - my) * kPos
+      let rvx = dt > 0 ? (tgx - pvx) / dt : 0
+      let rvy = dt > 0 ? (tgy - pvy) / dt : 0
+      pvx = tgx
+      pvy = tgy
+      const sp = Math.hypot(rvx, rvy)
+      if (sp > 5) {
+        rvx *= 5 / sp
+        rvy *= 5 / sp
+      }
+      const kVel = 1 - Math.exp(-dt * 6)
+      wvx += (rvx - wvx) * kVel
+      wvy += (rvy - wvy) * kVel
+      const moving = now - lastMoveTs < 100
+      const kAmp = 1 - Math.exp(-dt * (moving ? 6 : 2.5))
+      amp += ((moving ? 1 : 0) - amp) * kAmp
+
       size()
       gl.uniform1f(uTime, t)
       gl.uniform2f(uRes, canvas.width, canvas.height)
       gl.uniform4fv(uRipples, ripples)
+      gl.uniform2f(uMouse, mx, my)
+      gl.uniform2f(uMouseVel, wvx, wvy)
+      gl.uniform1f(uMouseAmp, amp)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
       raf = requestAnimationFrame(frame)
     }
@@ -232,6 +340,7 @@ export default function WaterBackground() {
     const stop = () => {
       running = false
       cancelAnimationFrame(raf)
+      amp = 0 // frame() không chạy khi ẩn tab -> amp không tự decay được
     }
     if (!document.hidden) start()
 
@@ -253,6 +362,8 @@ export default function WaterBackground() {
       ro.disconnect()
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('blur', onLeave)
+      document.removeEventListener('pointerleave', onLeave)
       document.removeEventListener('visibilitychange', onVisibility)
       canvas.removeEventListener('webglcontextlost', onContextLost)
       gl.deleteBuffer(buf)

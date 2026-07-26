@@ -50,7 +50,7 @@ function Shell() {
           <div className="eyebrow">Giờ hiện tại</div>
           <div className="clock">{fmtClock(now)}</div>
         </div>
-        <button className="btn btn-ghost" style={{ color: '#fff', borderColor: '#3d5560' }} onClick={signOut}>
+        <button className="btn btn-ghost" onClick={signOut}>
           Đăng xuất
         </button>
       </header>

@@ -46,7 +46,7 @@ export default function Trips() {
           <div className="eyebrow">Lịch trình chuyến đi</div>
           <h1>Chào {profile?.full_name ?? user?.email}</h1>
         </div>
-        <button className="btn btn-ghost" style={{ color: '#fff', borderColor: '#3d5560' }} onClick={signOut}>
+        <button className="btn btn-ghost" onClick={signOut}>
           Đăng xuất
         </button>
       </header>
@@ -87,7 +87,7 @@ export default function Trips() {
           </div>
         )}
 
-        <div className="panel" style={{ marginTop: 26, maxWidth: 440 }}>
+        <div className="panel panel-join" style={{ marginTop: 26, maxWidth: 440 }}>
           <div className="eyebrow">Tham gia nhóm</div>
           <h3 style={{ margin: '4px 0 12px' }}>Nhập mã chuyến đi</h3>
           <form onSubmit={join} style={{ display: 'flex', gap: 8 }}>

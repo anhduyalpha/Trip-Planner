@@ -72,13 +72,7 @@ export default function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <button
-              type="button"
-              className="pw-toggle"
-              aria-pressed={showPw}
-              aria-label="Hiện mật khẩu"
-              onClick={() => setShowPw((v) => !v)}
-            >
+            <button type="button" className="pw-toggle" aria-pressed={showPw} onClick={() => setShowPw((v) => !v)}>
               {showPw ? 'ẨN' : 'HIỆN'}
             </button>
           </div>

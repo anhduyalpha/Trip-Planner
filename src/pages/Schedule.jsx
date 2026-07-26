@@ -41,7 +41,7 @@ export default function Schedule() {
       </div>
 
       {/* Đang diễn ra ngay lúc này */}
-      <div className="panel" style={{ marginBottom: 20 }}>
+      <div className="panel panel-now" style={{ marginBottom: 20 }}>
         <div className="eyebrow">Ngay lúc này</div>
         {ongoing.length === 0 ? (
           <p className="muted" style={{ margin: '4px 0 0' }}>
