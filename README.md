@@ -79,6 +79,14 @@ Mở <http://localhost:5173> → bấm **Đăng ký** tạo tài khoản bất k
 
 > 🔒 **Ghi chú bảo mật:** Anon key của Supabase được thiết kế để công khai ở phía client (luôn nằm trong bundle JS gửi tới trình duyệt). Dữ liệu được bảo vệ bằng **Row Level Security** khai báo trong [`supabase/schema.sql`](supabase/schema.sql), không phụ thuộc vào việc giấu key. Key ghi sẵn ở đây để thuận tiện chấm bài; `service_role` key (bí mật thật sự) không xuất hiện ở bất kỳ đâu trong repo.
 
+> [!IMPORTANT]
+> **Lưu ý về email và bản deploy sẵn:** Supabase có rate limit **2 email mỗi giờ**.
+> Khi chấm bài, khuyến khích tự cấu hình một project Supabase riêng và dùng **1 lượt**
+> để xác nhận email đăng ký tài khoản, **1 lượt** để đặt lại mật khẩu. Bản website
+> deploy sẵn đã tắt xác nhận email khi đăng ký nên không kiểm tra email thật; đồng
+> thời **không thể dùng để kiểm thử thực tế tính năng “Quên mật khẩu”**. Muốn kiểm
+> tra đầy đủ luồng này, hãy dùng Supabase riêng và cấu hình Redirect URL như bên dưới.
+
 <details>
 <summary>🛠️ <strong>Tự dựng database riêng (tùy chọn)</strong></summary>
 
@@ -87,7 +95,8 @@ Mở <http://localhost:5173> → bấm **Đăng ký** tạo tài khoản bất k
 1. Tạo project miễn phí tại <https://supabase.com>.
 2. Vào **SQL Editor**, dán toàn bộ nội dung [`supabase/schema.sql`](supabase/schema.sql) → **Run**.
    File này tạo đủ bảng, khóa ngoại, Row Level Security, RPC và trigger.
-3. Vào **Authentication → Providers → Email**, tắt *Confirm email* để đăng ký xong đăng nhập được ngay.
+3. Vào **Authentication → Providers → Email**. Giữ *Confirm email* nếu muốn kiểm thử email thật
+   (lượt xác nhận đăng ký sẽ dùng 1 trong 2 email/giờ); chỉ tắt khi muốn đăng ký và đăng nhập ngay.
 4. Copy `.env.example` thành `.env`, điền 2 giá trị ở **Project Settings → API**
    ⚠️ `VITE_SUPABASE_URL` là URL gốc dạng `https://xxxx.supabase.co`, **không** kèm `/rest/v1`.
 5. Trong **Authentication → URL Configuration**, thêm các Redirect URL cho luồng quên mật khẩu:
