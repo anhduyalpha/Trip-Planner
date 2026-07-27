@@ -76,13 +76,21 @@ export default function Modal({
     const vv = window.visualViewport
     if (!vv) return undefined
     const sync = () => {
-      document.documentElement.style.setProperty('--vvh', `${Math.round(vv.height)}px`)
+      const el = document.documentElement
+      el.style.setProperty('--vvh', `${Math.round(vv.height)}px`)
+      // Chỉ đo chiều cao là chưa đủ: khi bàn phím iOS bật lên, vùng nhìn thấy
+      // còn TRƯỢT xuống. Không bù offsetTop thì lớp phủ vẫn neo ở đỉnh layout
+      // viewport và tấm sheet nằm phía sau bàn phím.
+      el.style.setProperty('--vvtop', `${Math.round(vv.offsetTop)}px`)
     }
     sync()
     vv.addEventListener('resize', sync)
+    vv.addEventListener('scroll', sync)
     return () => {
       vv.removeEventListener('resize', sync)
+      vv.removeEventListener('scroll', sync)
       document.documentElement.style.removeProperty('--vvh')
+      document.documentElement.style.removeProperty('--vvtop')
     }
   }, [])
 

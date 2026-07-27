@@ -9,17 +9,23 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Modal from '../components/Modal'
-import { fmtClock, fmtDuration, fmtTime } from '../lib/schedule'
+import LiveClock from '../components/LiveClock'
+import { fmtDuration, fmtTime } from '../lib/schedule'
 import { fmtVND } from '../lib/money'
 import { echoDate, echoRange } from '../lib/format'
 import { buildOverview, buildTripCard, dateRangeLabel, sortCards } from '../lib/dashboard'
 
+// Mã tham gia là cửa duy nhất vào một chuyến đi, nên phải sinh bằng nguồn
+// ngẫu nhiên mật mã. Math.random() dùng seed đoán được và hai máy mở app cùng
+// lúc có thể ra cùng dãy. crypto là API sẵn có của trình duyệt.
+// 32 ký tự: lấy 5 bit mỗi lần, & 31 nên không lệch phân phối.
 const makeCode = () => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  const bytes = new Uint8Array(6)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => chars[b & 31]).join('')
 }
 
-const CLOCK_MS = 1000 // chỉ nuôi <LiveClock/>, không kéo cả dashboard render lại
 const TICK_MS = 30000 // nhịp suy ra lại trạng thái theo giờ
 
 /** Tiếng Việt: tên riêng nằm ở cuối họ tên. */
@@ -108,7 +114,7 @@ export default function Trips() {
     setEvents(
       (eRes.data ?? []).map((e) => ({
         ...e,
-        cost: Number(e.cost),
+        cost: Math.round(Number(e.cost)),
         assigned: (e.event_members ?? []).map((x) => x.member_id)
       }))
     )
@@ -330,21 +336,12 @@ export default function Trips() {
 }
 
 /* Đồng hồ sống — lá riêng để nhịp 1 giây chỉ render lại một node. */
-function LiveClock() {
-  const [t, setT] = useState(() => new Date())
-  useEffect(() => {
-    const id = setInterval(() => setT(new Date()), CLOCK_MS)
-    return () => clearInterval(id)
-  }, [])
-  return <span className="clock hn-clock">{fmtClock(t)}</span>
-}
-
 /** Hộc đèn đồng hồ — nền tối cục bộ để amber dư tương phản. */
 function ClockWell() {
   return (
     <div className="hn-well">
       <span className="eyebrow hn-well-label">Giờ hiện tại</span>
-      <LiveClock />
+      <LiveClock className="clock hn-clock" />
     </div>
   )
 }

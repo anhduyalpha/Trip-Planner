@@ -9,7 +9,11 @@ const blank = () => {
   const start = new Date()
   start.setMinutes(0, 0, 0)
   start.setHours(start.getHours() + 1)
-  const end = new Date(start.getTime() + 60 * 60 * 1000)
+  // setHours (số học theo lịch) chứ không phải +3600000 (số học tuyệt đối):
+  // vào ngày lùi giờ mùa hè, một tiếng tuyệt đối rơi vào cùng giờ địa phương,
+  // form mở ra với giờ kết thúc TRÙNG giờ bắt đầu và không lưu được.
+  const end = new Date(start)
+  end.setHours(end.getHours() + 1)
   return {
     title: '',
     description: '',
@@ -142,9 +146,13 @@ export default function EventForm({ event, onClose }) {
               *
             </b>
           </label>
+          {/* `required`: dấu * là aria-hidden nên nếu không có thuộc tính này,
+              trình đọc màn hình đọc ô là "Tiêu đề, edit, blank" và người dùng
+              chỉ biết nó bắt buộc sau khi bấm Lưu và bị từ chối. */}
           <input
             id="ev-title"
             data-autofocus
+            required
             value={form.title}
             onChange={set('title')}
             placeholder="Ví dụ: Ăn bánh canh cá lóc"
@@ -169,6 +177,7 @@ export default function EventForm({ event, onClose }) {
             <input
               id="ev-start"
               type="datetime-local"
+              required
               value={form.start_time}
               onChange={set('start_time')}
               aria-describedby="ev-start-echo"
@@ -187,6 +196,7 @@ export default function EventForm({ event, onClose }) {
             <input
               id="ev-end"
               type="datetime-local"
+              required
               value={form.end_time}
               onChange={set('end_time')}
               aria-describedby="ev-end-echo"

@@ -55,11 +55,24 @@ export default function Register() {
       <form onSubmit={submit}>
         <div className="field">
           <label htmlFor="name">Tên của bạn</label>
-          <input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          <input
+            id="name"
+            autoComplete="name"
+            required
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+          />
         </div>
         <div className="field">
           <label htmlFor="email">Email</label>
-          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
         <div className="field">
           <label htmlFor="password">Mật khẩu</label>
@@ -67,6 +80,7 @@ export default function Register() {
             <input
               id="password"
               type={showPw ? 'text' : 'password'}
+              autoComplete="new-password"
               required
               minLength={6}
               value={password}

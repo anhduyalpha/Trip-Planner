@@ -31,7 +31,7 @@ export default function Members() {
       <div className="page-head">
         <div>
           <div className="eyebrow">Nhóm</div>
-          <h1>{members.length} thành viên</h1>
+          <h2>{members.length} thành viên</h2>
         </div>
         <div className="btn-row">
           <span className="code-badge">Mã tham gia: {trip?.join_code}</span>
@@ -43,10 +43,18 @@ export default function Members() {
         </div>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {/* Không có role="alert" thì thông báo hiện ra ở đầu trang trong khi tiêu
+          điểm vẫn nằm ở nút vừa bấm, người dùng trình đọc màn hình không hề
+          biết thao tác đã hỏng. */}
+      {error && (
+        <div className="alert alert-error" role="alert">
+          {error}
+        </div>
+      )}
 
       <div className="panel">
-        <table className="table">
+        <div className="table-scroll" tabIndex={0} role="group" aria-label="Bảng dữ liệu, cuộn ngang được">
+          <table className="table">
           <thead>
             <tr>
               <th>Tên</th>
@@ -91,6 +99,7 @@ export default function Members() {
             })}
           </tbody>
         </table>
+        </div>
 
         {members.length === 0 && <div className="empty empty-inset">Chưa có thành viên nào.</div>}
       </div>

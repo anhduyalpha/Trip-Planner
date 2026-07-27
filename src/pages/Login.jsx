@@ -36,7 +36,14 @@ export default function Login() {
       <form onSubmit={submit}>
         <div className="field">
           <label htmlFor="email">Email</label>
-          <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
         <div className="field">
           <label htmlFor="password">Mật khẩu</label>
@@ -44,6 +51,7 @@ export default function Login() {
             <input
               id="password"
               type={showPw ? 'text' : 'password'}
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}

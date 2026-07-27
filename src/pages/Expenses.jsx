@@ -5,10 +5,14 @@ import { echoDateTime } from '../lib/format'
 
 export default function Expenses() {
   const { events, members, memberName } = useTrip()
-  const { ledger, total, unassignedCost, billableCount } = useMemo(
+  const { ledger, total, unassignedCost, orphanPaidCost, billableCount } = useMemo(
     () => computeLedger(events, members),
     [events, members]
   )
+  // "Cân bằng" phải suy ra từ SỔ, không phải từ việc danh sách gợi ý rỗng.
+  // Danh sách rỗng còn xảy ra khi người đã ứng tiền bị xóa khỏi nhóm: lúc đó
+  // mọi số dư đều âm, không có chủ nợ nào để ghép, mà nhóm thì chưa cân bằng.
+  const balanced = ledger.every((r) => Math.abs(r.balance) < 1)
   const settlements = useMemo(() => suggestSettlements(ledger), [ledger])
 
   const costEvents = events
@@ -22,7 +26,7 @@ export default function Expenses() {
       <div className="page-head">
         <div>
           <div className="eyebrow">Chi tiêu</div>
-          <h1>{fmtVND(total)}</h1>
+          <h2>{fmtVND(total)}</h2>
         </div>
       </div>
 
@@ -44,10 +48,18 @@ export default function Expenses() {
         </div>
       )}
 
+      {orphanPaidCost > 0 && (
+        <div className="alert alert-error">
+          {fmtVND(orphanPaidCost)} do một người đã rời nhóm ứng trước. Khoản này vẫn được chia cho mọi người nhưng không
+          ghi có cho ai, nên sổ dưới đây chưa cân. Mở lại hoạt động đó và chọn người đại diện trả.
+        </div>
+      )}
+
       {/* Bảng cân đối */}
       <section className="panel">
         <div className="eyebrow section-lbl">Số dư của từng người</div>
-        <table className="table">
+        <div className="table-scroll" tabIndex={0} role="group" aria-label="Bảng dữ liệu, cuộn ngang được">
+          <table className="table">
           <thead>
             <tr>
               <th>Thành viên</th>
@@ -75,6 +87,7 @@ export default function Expenses() {
             ))}
           </tbody>
         </table>
+        </div>
         {ledger.length === 0 && <div className="empty empty-inset">Chưa có thành viên nào.</div>}
       </section>
 
@@ -85,7 +98,9 @@ export default function Expenses() {
         </div>
         {settlements.length === 0 ? (
           <p className="muted m-0">
-            Cả nhóm đã cân bằng. Không ai phải trả thêm cho ai.
+            {balanced
+              ? 'Cả nhóm đã cân bằng. Không ai phải trả thêm cho ai.'
+              : 'Chưa ghép được ai với ai vì sổ đang lệch. Hãy xử lý cảnh báo phía trên trước.'}
           </p>
         ) : (
           <ul className="list-tight">
@@ -109,7 +124,8 @@ export default function Expenses() {
         <div className="eyebrow section-lbl">
           Chi tiết theo hoạt động
         </div>
-        <table className="table">
+        <div className="table-scroll" tabIndex={0} role="group" aria-label="Bảng dữ liệu, cuộn ngang được">
+          <table className="table">
           <thead>
             <tr>
               <th>Hoạt động</th>
@@ -135,6 +151,7 @@ export default function Expenses() {
             })}
           </tbody>
         </table>
+        </div>
         {costEvents.length === 0 && (
           <div className="empty empty-inset">Chưa có hoạt động nào phát sinh chi phí.</div>
         )}

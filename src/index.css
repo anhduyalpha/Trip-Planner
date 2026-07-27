@@ -539,7 +539,10 @@ select {
 .topbar:has(+ .tabs) { border-bottom-color: rgba(159, 216, 230, 0.1); box-shadow: none; }
 .topbar h1 { font-size: 1.05rem; color: #fff; }
 .topbar .eyebrow { color: #93c5d9; }
-.topbar a { color: #b7dcee; }
+/* Chỉ khác màu với chữ bên cạnh 1.29:1 nên người mù màu lam-vàng hoặc ai xem
+   ảnh xám không nhận ra đây là liên kết (WCAG 1.4.1). Thêm gạch chân. */
+.topbar a { color: #b7dcee; text-decoration: underline; text-underline-offset: 2px; }
+.topbar a:hover { color: #fff; }
 
 .clock {
   font-family: var(--mono);
@@ -599,6 +602,9 @@ select {
   from { opacity: 0; }
 }
 .page-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+/* Tiêu đề của mỗi tab là h2 (h1 duy nhất của khu vực là tên chuyến đi trên
+   topbar), nhưng thứ bậc trực quan thì không đổi. */
+.page-head h2 { font-size: 1.9rem; }
 
 /* ---------- Panel / Card (kính cấp 1) ---------- */
 .panel {
@@ -1000,7 +1006,9 @@ input[type='password']::-ms-clear { display: none; }
 .chip[data-tone='pending'] { color: #fff; background: var(--violet); border-color: var(--violet); }
 .chip[data-tone='cat'] { color: var(--ocean-deep); background: #e1f1f6; border-color: #b8dcea; }
 /* Đếm bằng 0: lùi hẳn về nền, đừng tranh chỗ với những trạng thái có thật. */
-.chip[data-tone='zero'] { color: var(--txt-2); opacity: 0.6; }
+/* `opacity` làm mờ CẢ chữ nên tỉ lệ tương phản tụt còn 2.7:1 (cần 4.5:1).
+   Muốn nó lùi lại thì hạ độ nổi của VIỀN và NỀN, giữ nguyên màu chữ. */
+.chip[data-tone='zero'] { color: var(--txt-2); border-color: var(--rule); background: none; }
 
 .avatars { display: flex; flex-wrap: wrap; gap: 5px; }
 .pill {
@@ -1020,7 +1028,13 @@ input[type='password']::-ms-clear { display: none; }
    ============================================================ */
 .overlay {
   position: fixed;
-  inset: 0;
+  /* Không dùng `inset: 0`: trên iOS, bàn phím ảo không làm layout viewport co
+     lại, nên lớp phủ vẫn cao hết màn hình và tấm sheet bị đẩy xuống sau bàn
+     phím. --vvh/--vvtop do Modal.jsx đo từ visualViewport. */
+  top: var(--vvtop, 0px);
+  left: 0;
+  right: 0;
+  height: var(--vvh, 100dvh);
   z-index: 50;
   /* 3 hàng: đệm co giãn · modal · đệm co giãn. Modal LUÔN nằm trong viewport
      -> overlay KHÔNG còn là lớp cuộn (đây là gốc của lỗi nút Lưu bị khuất). */
@@ -1522,10 +1536,15 @@ input[type='password']::-ms-clear { display: none; }
 .metric[data-tone='rose'] { box-shadow: inset 0 2px 0 var(--rose), inset 0 -1px 0 rgba(255,255,255,.4), var(--sh-glass); }
 .metric[data-tone='amber'] { box-shadow: inset 0 2px 0 var(--amber-edge), inset 0 -1px 0 rgba(255,255,255,.4), var(--sh-glass); }
 .metric-num {
-  font-size: var(--num-lg);
+  /* Cùng cỡ co giãn với .stat-num: ô chỉ số trên dashboard hẹp hơn nhiều so
+     với bề rộng của "1.110.000 ₫" ở cỡ chữ tối đa cũ. */
+  font-size: clamp(1.1rem, 1.1vw + 0.45rem, 1.45rem);
   font-weight: 700; letter-spacing: -0.03em; line-height: 1.15;
   color: var(--ocean-deep);
-  overflow-wrap: anywhere;
+  /* `anywhere` đè lên cả dấu cách không ngắt mà Intl đặt trước ₫, làm số tiền
+     vỡ đôi giữa chừng. Chống tràn chuyển sang việc cho chữ co lại. */
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 .metric-num[data-tone='rose'] { color: var(--rose-ink); }
 .metric-num[data-tone='violet'] { color: var(--violet-ink); }
@@ -1806,14 +1825,17 @@ input[type='password']::-ms-clear { display: none; }
   /* Bottom-sheet: tầm với ngón cái + bàn phím ảo đẩy từ dưới lên.
      .modal-body là scroller DUY NHẤT nên trình duyệt tự đưa ô đang focus vào
      tầm nhìn BÊN TRONG thân, không kéo cả trang. */
-  .overlay { grid-template-rows: minmax(28px, 1fr) auto; padding: 0; }
+  /* minmax(0, ...) chứ không phải minmax(28px, ...): sàn 28px cộng với chiều
+     cao tối đa của sheet vượt quá lớp phủ, và `overflow: hidden` cắt mất chân
+     modal, đúng lại lỗi "nút Lưu bị khuất". Khe hở trên co được về 0 khi hẹp. */
+  .overlay { grid-template-rows: minmax(0, 1fr) auto; padding: 0; }
   .modal {
     grid-row: 2;
     max-width: none;
     /* --vvh: chiều cao visualViewport thật, do Modal.jsx đặt. Cần vì iOS Safari
        không hỗ trợ interactive-widget=resizes-content nên dvh KHÔNG tụt khi
        bàn phím ảo bật lên, và chân modal bị bàn phím che. */
-    max-height: min(92dvh, var(--vvh, 92dvh));
+    max-height: 100%;
     border-radius: 20px 20px 0 0;
     border-bottom: 0;
     box-shadow: 0 -18px 60px -18px rgba(2, 14, 24, 0.82);
@@ -1934,3 +1956,30 @@ input[type='password']::-ms-clear { display: none; }
   .modal-body { padding-block: 0; }
   .modal-foot { padding: 8px 16px 10px; }
 }
+
+/* ============================================================
+   BỔ SUNG SAU ĐỢT AUDIT TOÀN DỰ ÁN
+   ============================================================ */
+
+/* Nhãn "+1" cho hoạt động kết thúc sang ngày hôm sau */
+.slot-nextday { font-weight: 700; color: var(--accent-txt); }
+
+/* Lỗi tại chỗ trên thẻ hoạt động (Duyệt / Từ chối / Hoàn thành / Xóa) */
+.ev-err {
+  margin: 10px 0 0;
+  padding: 7px 10px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--rose-ink);
+  color: var(--rose-ink);
+  background: rgba(181, 46, 79, 0.08);
+  font-size: 0.84rem;
+}
+
+/* Tiêu đề dài không dấu cách làm vỡ thẻ và sinh thanh cuộn ngang cho cả trang.
+   flex:1 để min-width mặc định là auto, tức là không co được dưới nội dung. */
+.ev-title { min-width: 0; overflow-wrap: anywhere; }
+
+/* Bảng có thể rộng hơn màn hình 320px hoặc khi phóng 200%. Cho phép CHÍNH nó
+   cuộn ngang thay vì đẩy cả trang cuộn theo. */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll > .table { min-width: 34rem; }

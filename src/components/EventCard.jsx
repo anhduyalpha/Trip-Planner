@@ -1,20 +1,47 @@
+import { useState } from 'react'
 import { useTrip } from '../context/TripContext'
-import { categoryLabel, deriveStatus, fmtDuration, fmtTime, statusLabel } from '../lib/schedule'
+import { categoryLabel, deriveStatus, endDayOffset, fmtDuration, fmtTime, statusLabel } from '../lib/schedule'
 import { fmtVND } from '../lib/money'
 
-export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onMoveDown }) {
+export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onMoveDown, canReorder = false }) {
   const { now, members, isLead, canEditEvent, patchEvent, deleteEvent } = useTrip()
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
   const status = deriveStatus(event, now)
+  const dayOffset = endDayOffset(event)
   const editable = canEditEvent(event)
   const assignedMembers = members.filter((m) => (event.assigned || []).includes(m.id))
-  const share = event.cost > 0 && assignedMembers.length ? event.cost / assignedMembers.length : 0
+  // Math.floor cho khớp với cách computeLedger chia: mỗi người gánh phần
+  // nguyên, phần dư vài đồng rải cho người đầu danh sách.
+  const share =
+    event.cost > 0 && assignedMembers.length ? Math.floor(event.cost / assignedMembers.length) : 0
+
+  // Duyệt / Từ chối / Hoàn thành trước đây gọi patchEvent mà không await, không
+  // bắt lỗi, không khoá nút: mất mạng thì promise vỡ trong im lặng, nhãn không
+  // đổi, và người dùng bấm tiếp mấy lần nữa.
+  const act = async (patch, fallback) => {
+    if (busy) return
+    setBusy(true)
+    setErr('')
+    try {
+      await patchEvent(event.id, patch)
+    } catch (e) {
+      setErr(e.message || fallback)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const remove = async () => {
+    if (busy) return
     if (!window.confirm(`Xóa hoạt động "${event.title}"?`)) return
+    setBusy(true)
+    setErr('')
     try {
       await deleteEvent(event.id)
     } catch (e) {
-      window.alert(e.message || 'Không xóa được. Event đã duyệt chỉ Lead mới xóa được.')
+      setErr(e.message || 'Không xóa được. Hoạt động đã duyệt chỉ Lead mới xóa được.')
+      setBusy(false)
     }
   }
 
@@ -46,7 +73,9 @@ export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onM
           {categoryLabel(event.category)}
         </span>
         <span className="mono">
-          {fmtTime(event.start_time)}-{fmtTime(event.end_time)} · {fmtDuration(event.start_time, event.end_time)}
+          {fmtTime(event.start_time)}-{fmtTime(event.end_time)}
+          {dayOffset > 0 && <b className="slot-nextday"> +{dayOffset}</b>} ·{' '}
+          {fmtDuration(event.start_time, event.end_time)}
         </span>
         {/* Emoji 📍 render ra một hình nhiều màu do hệ điều hành vẽ, lạc hẳn
             khỏi bảng màu hai tông của app và mỗi máy một kiểu. Dùng nét vẽ
@@ -81,6 +110,12 @@ export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onM
         </div>
       )}
 
+      {err && (
+        <p className="ev-err" role="alert">
+          {err}
+        </p>
+      )}
+
       <div className="ev-foot">
         <div className="ev-cost">
           {event.cost > 0 ? (
@@ -94,12 +129,26 @@ export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onM
         </div>
 
         <div className="btn-row">
-          {onMoveUp && (
+          {/* disabled ở hai đầu danh sách: trước đây nút vẫn bấm được nhưng
+              không làm gì, và vẫn tự khai với trình đọc màn hình là dùng được. */}
+          {canReorder && (
             <>
-              <button className="btn btn-ghost btn-tiny" onClick={onMoveUp} aria-label="Lên trên" title="Đổi khung giờ với event phía trên">
+              <button
+                className="btn btn-ghost btn-tiny"
+                onClick={onMoveUp ?? undefined}
+                disabled={busy || !onMoveUp}
+                aria-label="Đổi khung giờ với hoạt động phía trên"
+                title="Đổi khung giờ với hoạt động phía trên"
+              >
                 ↑
               </button>
-              <button className="btn btn-ghost btn-tiny" onClick={onMoveDown} aria-label="Xuống dưới" title="Đổi khung giờ với event phía dưới">
+              <button
+                className="btn btn-ghost btn-tiny"
+                onClick={onMoveDown ?? undefined}
+                disabled={busy || !onMoveDown}
+                aria-label="Đổi khung giờ với hoạt động phía dưới"
+                title="Đổi khung giờ với hoạt động phía dưới"
+              >
                 ↓
               </button>
             </>
@@ -108,7 +157,8 @@ export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onM
           {editable && (
             <button
               className="btn btn-ghost btn-tiny"
-              onClick={() => patchEvent(event.id, { is_completed: !event.is_completed })}
+              disabled={busy}
+              onClick={() => act({ is_completed: !event.is_completed }, 'Không đổi được trạng thái hoàn thành.')}
             >
               {event.is_completed ? 'Bỏ hoàn thành' : 'Hoàn thành'}
             </button>
@@ -116,11 +166,19 @@ export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onM
 
           {isLead && event.approval !== 'approved' && (
             <>
-              <button className="btn btn-teal btn-tiny" onClick={() => patchEvent(event.id, { approval: 'approved' })}>
+              <button
+                className="btn btn-teal btn-tiny"
+                disabled={busy}
+                onClick={() => act({ approval: 'approved' }, 'Không duyệt được hoạt động này.')}
+              >
                 Duyệt
               </button>
               {event.approval === 'pending' && (
-                <button className="btn btn-ghost btn-tiny" onClick={() => patchEvent(event.id, { approval: 'rejected' })}>
+                <button
+                  className="btn btn-ghost btn-tiny"
+                  disabled={busy}
+                  onClick={() => act({ approval: 'rejected' }, 'Không từ chối được hoạt động này.')}
+                >
                   Từ chối
                 </button>
               )}
@@ -129,10 +187,10 @@ export default function EventCard({ event, dragProps = {}, onEdit, onMoveUp, onM
 
           {editable ? (
             <>
-              <button className="btn btn-ghost btn-tiny" onClick={() => onEdit(event)}>
+              <button className="btn btn-ghost btn-tiny" disabled={busy} onClick={() => onEdit(event)}>
                 Sửa
               </button>
-              <button className="btn btn-danger btn-tiny" onClick={remove}>
+              <button className="btn btn-danger btn-tiny" disabled={busy} onClick={remove}>
                 Xóa
               </button>
             </>

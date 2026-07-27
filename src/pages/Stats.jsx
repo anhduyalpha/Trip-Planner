@@ -28,7 +28,14 @@ export default function Stats() {
   const { ledger, total } = useMemo(() => computeLedger(events, members), [events, members])
   const ongoing = findOngoing(approvedEvents, now)
   const completed = approvedEvents.filter((e) => e.is_completed).length
-  const topSpender = ledger[0]
+  // "Người ứng nhiều nhất" là người CHI ra nhiều nhất, không phải người có số
+  // dư cao nhất. computeLedger trả về ledger đã sắp theo balance, nên ledger[0]
+  // có thể là người chỉ ứng 100.000 mà lại đứng trên người ứng 1.300.000 vì
+  // người kia tự tham gia hết nên nợ bằng đúng khoản đã ứng.
+  const topSpender = useMemo(
+    () => ledger.reduce((best, r) => (!best || r.paid > best.paid ? r : best), null),
+    [ledger]
+  )
 
   const spendByCategory = useMemo(() => {
     const map = new Map()
@@ -45,7 +52,7 @@ export default function Stats() {
       <div className="page-head">
         <div>
           <div className="eyebrow">Thống kê nhanh</div>
-          <h1>Tổng quan chuyến đi</h1>
+          <h2>Tổng quan chuyến đi</h2>
         </div>
       </div>
 
@@ -132,7 +139,7 @@ export default function Stats() {
         ) : (
           <Bars rows={spendByCategory.map((r) => ({ label: r.label, value: r.sum }))} money />
         )}
-        {topSpender && total > 0 && (
+        {topSpender && topSpender.paid > 0 && (
           <p className="muted note-foot">
             Người ứng nhiều nhất: <strong>{topSpender.member.display_name}</strong>, {fmtVND(topSpender.paid)}
           </p>
