@@ -5,15 +5,21 @@
 **Ứng dụng web giúp nhóm bạn dựng lịch trình chuyến đi: tạo hoạt động, sắp xếp khung giờ,
 phân quyền Lead/Member, chia tiền nhóm và theo dõi trạng thái theo thời gian thực.**
 
+[![Production](https://img.shields.io/github/deployments/anhduyalpha/Trip-Planner/Production?style=for-the-badge&logo=vercel&logoColor=white&label=Production)](https://trip-planner-git-main-duydang0768134698-5991s-projects.vercel.app)
+[![Release](https://img.shields.io/github/v/release/anhduyalpha/Trip-Planner?style=for-the-badge&logo=github&label=Release)](https://github.com/anhduyalpha/Trip-Planner/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-0F766E?style=for-the-badge)](LICENSE)
+
 ![ReactJS](https://img.shields.io/badge/ReactJS-18-61DAFB?logo=react&logoColor=white&labelColor=20232a)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white&labelColor=20232a)
 ![React Router](https://img.shields.io/badge/React_Router-6-CA4245?logo=reactrouter&logoColor=white&labelColor=20232a)
 ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL_·_Auth_·_Realtime-3FCF8E?logo=supabase&logoColor=white&labelColor=20232a)
 ![CSS](https://img.shields.io/badge/CSS-thuần-1572B6?logo=css3&logoColor=white&labelColor=20232a)
 
-[⚡ Chạy nhanh](#-chạy-nhanh-để-chấm-bài-1-phút) ·
+[🚀 Live Demo](https://trip-planner-git-main-duydang0768134698-5991s-projects.vercel.app) ·
+[📦 Releases](https://github.com/anhduyalpha/Trip-Planner/releases) ·
+[⚡ Chạy cục bộ](#-chạy-cục-bộ) ·
 [✅ Đối chiếu đề bài](#-đối-chiếu-với-yêu-cầu-đề-bài) ·
-[📁 Cấu trúc](#-cấu-trúc-thư-mục)
+[📄 MIT License](#-giấy-phép)
 
 </div>
 
@@ -34,9 +40,21 @@ phân quyền Lead/Member, chia tiền nhóm và theo dõi trạng thái theo th
 
 ---
 
-## ⚡ Chạy nhanh để chấm bài (~1 phút)
+## 🚀 Bản triển khai & phát hành
 
-> Yêu cầu duy nhất: **Node.js 22 trở lên**. Database đã dựng sẵn trên Supabase — không cần cài đặt gì thêm.
+| Kênh | Liên kết | Ghi chú |
+|---|---|---|
+| **Production** | [Mở Trip Planner trên Vercel ↗](https://trip-planner-git-main-duydang0768134698-5991s-projects.vercel.app) | Tự động triển khai từ `main` |
+| **Latest release** | [Xem bản phát hành mới nhất ↗](https://github.com/anhduyalpha/Trip-Planner/releases/latest) | Ghi chú thay đổi và tag phiên bản |
+| **Deployment history** | [Xem lịch sử triển khai ↗](https://github.com/anhduyalpha/Trip-Planner/deployments/Production) | Trạng thái từng lần build |
+
+> Vercel có thể yêu cầu đăng nhập nếu **Deployment Protection** đang bật cho project.
+
+---
+
+## ⚡ Chạy cục bộ
+
+> Yêu cầu: **Node.js 22 trở lên**. Database đã dựng sẵn trên Supabase — không cần cài đặt thêm dịch vụ local.
 
 **1.** Cài thư viện:
 
@@ -95,7 +113,7 @@ Build production: `npm run build` · xem thử bản build: `npm run preview`
 | | Chọn loại hoạt động qua **dropdown** | [`EventForm.jsx`](src/components/EventForm.jsx) |
 | | **Luồng duyệt**: event của Member ở trạng thái *Chờ duyệt* | trigger `enforce_event_rules` trong [`schema.sql`](supabase/schema.sql) · khu "Chờ duyệt" ở [`Schedule.jsx`](src/pages/Schedule.jsx) |
 | **2** | **Kéo–thả** đổi khung giờ + nút **↑ ↓** dự phòng | [`Schedule.jsx`](src/pages/Schedule.jsx) (HTML5 drag & drop) → `swapEventSlots()` |
-| | **Realtime engine**: tự chuyển *Sắp tới → Đang diễn ra → Đã xong* | [`schedule.js`](src/lib/schedule.js) → `deriveStatus()` (tức thì, nhịp 1s) + RPC `sync_trip_statuses` ghi DB mỗi 30s |
+| | **Realtime engine**: tự chuyển *Sắp tới → Đang diễn ra → Đã xong* | [`schedule.js`](src/lib/schedule.js) → `deriveStatus()` (tức thì, nhịp 30s) + RPC `sync_trip_statuses` ghi DB mỗi 30s |
 | | *Tạm hoãn* không áp dụng logic tự động | `deriveStatus()` trả về nguyên trạng thái |
 | | *Hủy* vẫn hiển thị, vẫn chiếm khung giờ, không auto | vẫn nằm trong đường ray và trong `findFullOverlap()`, bị loại khỏi tính tiền |
 | | Hiển thị event đang diễn ra | khối "Ngay lúc này" + vạch **BÂY GIỜ** ở [`Schedule.jsx`](src/pages/Schedule.jsx) · [`Stats.jsx`](src/pages/Stats.jsx) |
@@ -117,6 +135,7 @@ Build production: `npm run build` · xem thử bản build: `npm run preview`
 
 ```
 trip-planner/
+├── LICENSE                 # giấy phép MIT
 ├── index.html
 ├── package.json
 ├── vite.config.js
@@ -135,6 +154,7 @@ trip-planner/
     │   ├── AuthContext.jsx # phiên đăng nhập
     │   └── TripContext.jsx # dữ liệu chuyến đi, CRUD, đồng hồ, phân quyền
     ├── components/
+    │   ├── LiveClock.jsx
     │   ├── Modal.jsx
     │   ├── EventForm.jsx
     │   └── EventCard.jsx
@@ -148,3 +168,12 @@ trip-planner/
         ├── Expenses.jsx
         └── Stats.jsx
 ```
+
+---
+
+## 📄 Giấy phép
+
+Trip Planner được phát hành theo giấy phép **MIT**. Bạn có thể sử dụng, chỉnh sửa
+và phân phối lại dự án theo các điều khoản trong [`LICENSE`](LICENSE).
+
+Copyright © 2026 [anhduyalpha](https://github.com/anhduyalpha).
