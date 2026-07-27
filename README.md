@@ -36,7 +36,7 @@ phân quyền Lead/Member, chia tiền nhóm và theo dõi trạng thái theo th
 
 ## ⚡ Chạy nhanh để chấm bài (~1 phút)
 
-> Yêu cầu duy nhất: **Node.js 18 trở lên**. Database đã dựng sẵn trên Supabase — không cần cài đặt gì thêm.
+> Yêu cầu duy nhất: **Node.js 22 trở lên**. Database đã dựng sẵn trên Supabase — không cần cài đặt gì thêm.
 
 **1.** Cài thư viện:
 

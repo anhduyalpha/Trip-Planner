@@ -28,7 +28,14 @@ export default function Stats() {
   const { ledger, total } = useMemo(() => computeLedger(events, members), [events, members])
   const ongoing = findOngoing(approvedEvents, now)
   const completed = approvedEvents.filter((e) => e.is_completed).length
-  const topSpender = ledger[0]
+  // "Người ứng nhiều nhất" là người CHI ra nhiều nhất, không phải người có số
+  // dư cao nhất. computeLedger trả về ledger đã sắp theo balance, nên ledger[0]
+  // có thể là người chỉ ứng 100.000 mà lại đứng trên người ứng 1.300.000 vì
+  // người kia tự tham gia hết nên nợ bằng đúng khoản đã ứng.
+  const topSpender = useMemo(
+    () => ledger.reduce((best, r) => (!best || r.paid > best.paid ? r : best), null),
+    [ledger]
+  )
 
   const spendByCategory = useMemo(() => {
     const map = new Map()
@@ -41,15 +48,15 @@ export default function Stats() {
   }, [approvedEvents])
 
   return (
-    <main className="page">
+    <main className="page" id="noi-dung-chinh" tabIndex={-1}>
       <div className="page-head">
         <div>
           <div className="eyebrow">Thống kê nhanh</div>
-          <h1>Tổng quan chuyến đi</h1>
+          <h2>Tổng quan chuyến đi</h2>
         </div>
       </div>
 
-      <div className="stat-grid" style={{ marginBottom: 22 }}>
+      <div className="stat-grid">
         <div className="stat">
           <span className="eyebrow">Hoạt động đã duyệt</span>
           <span className="stat-num">{approvedEvents.length}</span>
@@ -76,16 +83,16 @@ export default function Stats() {
       <section className="panel">
         <div className="eyebrow">Đang diễn ra lúc {fmtTime(now)}</div>
         {ongoing.length === 0 ? (
-          <p className="muted" style={{ margin: '6px 0 0' }}>
+          <p className="muted m-0">
             Không có hoạt động nào đang diễn ra.
           </p>
         ) : (
-          <ul style={{ margin: '8px 0 0', paddingLeft: 20 }}>
+          <ul className="list-tight">
             {ongoing.map((e) => (
               <li key={e.id}>
                 <strong>{e.title}</strong>{' '}
                 <span className="mono muted">
-                  {fmtTime(e.start_time)}–{fmtTime(e.end_time)}
+                  {fmtTime(e.start_time)}-{fmtTime(e.end_time)}
                 </span>
               </li>
             ))}
@@ -95,12 +102,14 @@ export default function Stats() {
 
       {/* Theo trạng thái */}
       <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
+        <div className="eyebrow section-lbl">
           Theo trạng thái
         </div>
         <div className="btn-row">
           {byStatus.map((s) => (
-            <span key={s.label} className="chip" data-tone={s.tone}>
+            // Amber là điểm nóng DUY NHẤT của app, dành cho "đang diễn ra ngay
+            // lúc này". Tô nó lên một con số 0 là kéo mắt về chỗ không có gì.
+            <span key={s.label} className="chip" data-tone={s.count ? s.tone : 'zero'}>
               {s.label}: {s.count}
             </span>
           ))}
@@ -110,11 +119,11 @@ export default function Stats() {
 
       {/* Theo loại hoạt động */}
       <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
+        <div className="eyebrow section-lbl">
           Theo loại hoạt động
         </div>
         {byCategory.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Chưa có dữ liệu.</p>
+          <p className="muted m-0">Chưa có dữ liệu.</p>
         ) : (
           <Bars rows={byCategory.map((c) => ({ label: c.label, value: c.count }))} />
         )}
@@ -122,17 +131,17 @@ export default function Stats() {
 
       {/* Chi phí theo loại */}
       <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
+        <div className="eyebrow section-lbl">
           Chi phí theo loại hoạt động
         </div>
         {spendByCategory.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>Chưa phát sinh chi phí.</p>
+          <p className="muted m-0">Chưa phát sinh chi phí.</p>
         ) : (
           <Bars rows={spendByCategory.map((r) => ({ label: r.label, value: r.sum }))} money />
         )}
-        {topSpender && total > 0 && (
-          <p className="muted" style={{ fontSize: '0.86rem', marginBottom: 0, marginTop: 14 }}>
-            Người ứng nhiều nhất: <strong>{topSpender.member.display_name}</strong> — {fmtVND(topSpender.paid)}
+        {topSpender && topSpender.paid > 0 && (
+          <p className="muted note-foot">
+            Người ứng nhiều nhất: <strong>{topSpender.member.display_name}</strong>, {fmtVND(topSpender.paid)}
           </p>
         )}
       </section>
@@ -143,7 +152,7 @@ export default function Stats() {
 function Bars({ rows, money = false }) {
   const max = Math.max(...rows.map((r) => r.value), 1)
   return (
-    <div className="bars" style={{ marginTop: 14 }}>
+    <div className="bars">
       {rows.map((r) => (
         <div className={`bar-row${money ? ' wide' : ''}`} key={r.label}>
           <span>{r.label}</span>

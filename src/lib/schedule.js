@@ -64,16 +64,27 @@ export function findFullOverlap(events, draft, ignoreId = null) {
 export function validateEvent(draft, allEvents, ignoreId = null) {
   const errors = []
   if (!draft.title?.trim()) errors.push('Tiêu đề không được để trống.')
-  if (!draft.start_time || !draft.end_time) errors.push('Cần chọn cả giờ bắt đầu và giờ kết thúc.')
-  else if (new Date(draft.end_time) <= new Date(draft.start_time))
-    errors.push('Giờ kết thúc phải sau giờ bắt đầu.')
+  const cost = draft.cost === '' || draft.cost == null ? 0 : Number(draft.cost)
+  const start = draft.start_time ? new Date(draft.start_time) : null
+  const end = draft.end_time ? new Date(draft.end_time) : null
+  const ok = (d) => d instanceof Date && !Number.isNaN(d.getTime())
 
-  if (draft.cost && Number(draft.cost) > 0 && !draft.payer_member_id)
+  if (!start || !end) errors.push('Cần chọn cả giờ bắt đầu và giờ kết thúc.')
+  // Mọi phép so sánh với Invalid Date đều trả về false, nên một chuỗi không đọc
+  // được sẽ lọt hết các cửa rồi mới nổ ở saveEvent với 'Invalid time value'
+  // bằng tiếng Anh. Trình duyệt không hỗ trợ datetime-local sẽ hạ input về ô
+  // chữ thường và người dùng gõ '27/07/2026 14:00' là rơi vào đúng ca này.
+  else if (!ok(start) || !ok(end)) errors.push('Giờ bắt đầu hoặc giờ kết thúc không hợp lệ.')
+  else if (end <= start) errors.push('Giờ kết thúc phải sau giờ bắt đầu.')
+
+  if (!Number.isFinite(cost) || cost < 0 || !Number.isInteger(cost))
+    errors.push('Chi phí VND phải là số nguyên không âm.')
+  else if (cost > 0 && !draft.payer_member_id)
     errors.push('Có chi phí thì phải chọn người đại diện trả.')
 
-  if (draft.start_time && draft.end_time && new Date(draft.end_time) > new Date(draft.start_time)) {
+  if (ok(start) && ok(end) && end > start) {
     const clash = findFullOverlap(allEvents, draft, ignoreId)
-    if (clash) errors.push(`Khung giờ đè hoàn toàn lên event "${clash.title}". Hãy chỉnh lại giờ.`)
+    if (clash) errors.push(`Khung giờ đè hoàn toàn lên hoạt động "${clash.title}". Hãy chỉnh lại giờ.`)
   }
   return errors
 }
@@ -94,6 +105,16 @@ export const fmtClock = (d) => {
 export const dayKey = (d) => {
   const x = new Date(d)
   return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`
+}
+
+/** Số ngày lịch địa phương từ lúc bắt đầu tới lúc kết thúc. */
+export const endDayOffset = (e) => {
+  const start = new Date(e.start_time)
+  const end = new Date(e.end_time)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0
+  const startDay = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate())
+  const endDay = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate())
+  return Math.max(0, Math.round((endDay - startDay) / 86400000))
 }
 
 export const fmtDayLabel = (key) => {

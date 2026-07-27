@@ -15,7 +15,7 @@ export default function Members() {
   const remove = async (m) => {
     const assignedCount = events.filter((e) => (e.assigned || []).includes(m.id)).length
     const warn = assignedCount
-      ? `\n${m.display_name} đang được assign vào ${assignedCount} hoạt động — các assign đó sẽ mất.`
+      ? `\n${m.display_name} đang được assign vào ${assignedCount} hoạt động. Các assign đó sẽ mất.`
       : ''
     if (!window.confirm(`Xóa ${m.display_name} khỏi chuyến đi?${warn}`)) return
     try {
@@ -27,11 +27,11 @@ export default function Members() {
   }
 
   return (
-    <main className="page">
+    <main className="page" id="noi-dung-chinh" tabIndex={-1}>
       <div className="page-head">
         <div>
           <div className="eyebrow">Nhóm</div>
-          <h1>{members.length} thành viên</h1>
+          <h2>{members.length} thành viên</h2>
         </div>
         <div className="btn-row">
           <span className="code-badge">Mã tham gia: {trip?.join_code}</span>
@@ -43,10 +43,18 @@ export default function Members() {
         </div>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {/* Không có role="alert" thì thông báo hiện ra ở đầu trang trong khi tiêu
+          điểm vẫn nằm ở nút vừa bấm, người dùng trình đọc màn hình không hề
+          biết thao tác đã hỏng. */}
+      {error && (
+        <div className="alert alert-error" role="alert">
+          {error}
+        </div>
+      )}
 
       <div className="panel">
-        <table className="table">
+        <div className="table-scroll" tabIndex={0} role="group" aria-label="Bảng dữ liệu, cuộn ngang được">
+          <table className="table">
           <thead>
             <tr>
               <th>Tên</th>
@@ -65,7 +73,7 @@ export default function Members() {
                     <strong>{m.display_name}</strong>
                     {m.id === me?.id && <span className="muted"> · bạn</span>}
                   </td>
-                  <td className="muted">{m.role_desc || '—'}</td>
+                  <td className="muted">{m.role_desc || 'Chưa đặt'}</td>
                   <td>
                     <span className="chip" data-tone={m.permission === 'lead' ? 'done' : 'upcoming'}>
                       {m.permission === 'lead' ? 'Lead' : 'Member'}
@@ -73,7 +81,7 @@ export default function Members() {
                   </td>
                   <td className="muted">{m.user_id ? 'Đã liên kết' : 'Chưa có tài khoản'}</td>
                   <td>
-                    <div className="btn-row" style={{ justifyContent: 'flex-end' }}>
+                    <div className="btn-row btn-row--end">
                       {canEditRow && (
                         <button className="btn btn-ghost btn-tiny" onClick={() => setEditing(m)}>
                           Sửa
@@ -91,18 +99,19 @@ export default function Members() {
             })}
           </tbody>
         </table>
+        </div>
 
-        {members.length === 0 && <div className="empty" style={{ marginTop: 14 }}>Chưa có thành viên nào.</div>}
+        {members.length === 0 && <div className="empty empty-inset">Chưa có thành viên nào.</div>}
       </div>
 
       <div className="panel">
         <div className="eyebrow">Phân quyền đang áp dụng</div>
-        <ul className="muted" style={{ margin: '8px 0 0', paddingLeft: 20, fontSize: '0.9rem' }}>
+        <ul className="muted list-tight">
           <li>
-            <strong>Lead</strong> — tạo/sửa/xóa mọi hoạt động, duyệt hoạt động của người khác, thêm và xóa thành viên.
+            <strong>Lead:</strong> tạo, sửa, xóa mọi hoạt động; duyệt hoạt động của người khác; thêm và xóa thành viên.
           </li>
           <li>
-            <strong>Member</strong> — tạo hoạt động (vào trạng thái Chờ duyệt), sửa/xóa hoạt động do chính mình tạo và
+            <strong>Member:</strong> tạo hoạt động (vào trạng thái Chờ duyệt); sửa hoặc xóa hoạt động do chính mình tạo và
             chưa được duyệt. Không xóa được hoạt động đã duyệt.
           </li>
         </ul>
@@ -143,23 +152,35 @@ function MemberForm({ member, onClose, onSave }) {
 
   return (
     <Modal
+      kicker={member ? 'Hồ sơ thành viên' : 'Thành viên mới'}
       title={member ? 'Sửa thành viên' : 'Thêm thành viên'}
       onClose={onClose}
+      busy={busy}
       footer={
         <>
-          <button className="btn btn-ghost" onClick={onClose}>
+          <button className="btn btn-ghost" type="button" onClick={onClose} disabled={busy}>
             Hủy
           </button>
-          <button className="btn" onClick={submit} disabled={busy}>
+          <button className="btn" type="button" onClick={submit} disabled={busy}>
+            {busy && <span className="spinner" aria-hidden="true" />}
             {busy ? 'Đang lưu…' : 'Lưu'}
           </button>
         </>
       }
     >
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && (
+        <div className="alert alert-error" role="alert" tabIndex={-1}>
+          {error}
+        </div>
+      )}
       <div className="field">
-        <label htmlFor="m-name">Tên *</label>
-        <input id="m-name" value={name} onChange={(e) => setName(e.target.value)} />
+        <label htmlFor="m-name">
+          Tên{' '}
+          <b className="req" aria-hidden="true">
+            *
+          </b>
+        </label>
+        <input id="m-name" data-autofocus value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div className="field">
         <label htmlFor="m-role">Vai trò trong nhóm</label>
@@ -177,9 +198,9 @@ function MemberForm({ member, onClose, onSave }) {
         </datalist>
       </div>
       {!member && (
-        <p className="muted" style={{ fontSize: '0.84rem', marginBottom: 0 }}>
-          Thành viên thêm tay chưa có tài khoản — vẫn assign vào hoạt động và chia tiền được. Muốn họ tự đăng nhập, gửi
-          mã tham gia của chuyến đi.
+        <p className="field-help">
+          Thành viên thêm tay chưa có tài khoản nhưng vẫn assign vào hoạt động và chia tiền được. Muốn họ tự đăng nhập,
+          gửi mã tham gia của chuyến đi.
         </p>
       )}
     </Modal>

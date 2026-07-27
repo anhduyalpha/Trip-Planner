@@ -8,14 +8,22 @@ export default function Register() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPw, setShowPw] = useState(false)
   const [error, setError] = useState('')
+  const [errorNonce, setErrorNonce] = useState(0)
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
 
+  const fail = (msg) => {
+    setError(msg)
+    setErrorNonce((n) => n + 1)
+  }
+
   const submit = async (e) => {
     e.preventDefault()
+    setNotice('')
     if (password.length < 6) {
-      setError('Mật khẩu cần ít nhất 6 ký tự.')
+      fail('Mật khẩu cần ít nhất 6 ký tự.')
       return
     }
     setBusy(true)
@@ -23,7 +31,7 @@ export default function Register() {
     const { data, error: err } = await signUp(email.trim(), password, fullName.trim() || 'Thành viên')
     setBusy(false)
     if (err) {
-      setError(err.message)
+      fail(err.message)
       return
     }
     if (data.session) navigate('/', { replace: true })
@@ -31,42 +39,66 @@ export default function Register() {
   }
 
   return (
-    <div className="auth-wrap">
-      <div className="auth-card">
-        <div className="brand-mark">Lịch trình chuyến đi</div>
-        <h1 style={{ marginBottom: 18 }}>Tạo tài khoản</h1>
-        <div className="panel">
-          {error && <div className="alert alert-error">{error}</div>}
-          {notice && <div className="alert alert-ok">{notice}</div>}
-          <form onSubmit={submit}>
-            <div className="field">
-              <label htmlFor="name">Tên của bạn</label>
-              <input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="email">Email</label>
-              <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="password">Mật khẩu</label>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <button className="btn" style={{ width: '100%', justifyContent: 'center' }} disabled={busy}>
-              {busy ? 'Đang tạo…' : 'Tạo tài khoản'}
-            </button>
-          </form>
-          <p className="muted center" style={{ marginBottom: 0, marginTop: 14, fontSize: '0.88rem' }}>
-            Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
-          </p>
+    <div className="auth-panel">
+      <div className="brand-mark">Lịch trình chuyến đi</div>
+      <h1>Tạo tài khoản</h1>
+      {error && (
+        <div key={errorNonce} role="alert" className="alert alert-error">
+          {error}
         </div>
-      </div>
+      )}
+      {notice && (
+        <div role="status" className="alert alert-ok">
+          {notice}
+        </div>
+      )}
+      <form onSubmit={submit}>
+        <div className="field">
+          <label htmlFor="name">Tên của bạn</label>
+          <input
+            id="name"
+            autoComplete="name"
+            required
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="password">Mật khẩu</label>
+          <div className="input-wrap">
+            <input
+              id="password"
+              type={showPw ? 'text' : 'password'}
+              autoComplete="new-password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button type="button" className="pw-toggle" aria-pressed={showPw} onClick={() => setShowPw((v) => !v)}>
+              {showPw ? 'ẨN' : 'HIỆN'}
+            </button>
+          </div>
+        </div>
+        <button className="btn btn-auth" disabled={busy}>
+          {busy && <span className="spinner" aria-hidden="true" />}
+          {busy ? 'Đang tạo…' : 'Tạo tài khoản'}
+        </button>
+      </form>
+      <p className="muted center auth-foot">
+        Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+      </p>
     </div>
   )
 }

@@ -1,14 +1,18 @@
 import { useMemo } from 'react'
 import { useTrip } from '../context/TripContext'
 import { computeLedger, fmtVND, suggestSettlements } from '../lib/money'
-import { fmtTime, dayKey } from '../lib/schedule'
+import { echoDateTime } from '../lib/format'
 
 export default function Expenses() {
   const { events, members, memberName } = useTrip()
-  const { ledger, total, unassignedCost, billableCount } = useMemo(
+  const { ledger, total, unassignedCost, orphanPaidCost, billableCount } = useMemo(
     () => computeLedger(events, members),
     [events, members]
   )
+  // "Cân bằng" phải suy ra từ SỔ, không phải từ việc danh sách gợi ý rỗng.
+  // Danh sách rỗng còn xảy ra khi người đã ứng tiền bị xóa khỏi nhóm: lúc đó
+  // mọi số dư đều âm, không có chủ nợ nào để ghép, mà nhóm thì chưa cân bằng.
+  const balanced = ledger.every((r) => Math.abs(r.balance) < 1)
   const settlements = useMemo(() => suggestSettlements(ledger), [ledger])
 
   const costEvents = events
@@ -18,19 +22,15 @@ export default function Expenses() {
   const perHead = members.length ? total / members.length : 0
 
   return (
-    <main className="page">
+    <main className="page" id="noi-dung-chinh" tabIndex={-1}>
       <div className="page-head">
         <div>
           <div className="eyebrow">Chi tiêu</div>
-          <h1>{fmtVND(total)}</h1>
+          <h2>{fmtVND(total)}</h2>
         </div>
       </div>
 
-      <div className="stat-grid" style={{ marginBottom: 22 }}>
-        <div className="stat">
-          <span className="eyebrow">Tổng chi phí chuyến đi</span>
-          <span className="stat-num">{fmtVND(total)}</span>
-        </div>
+      <div className="stat-grid">
         <div className="stat">
           <span className="eyebrow">Trung bình mỗi người</span>
           <span className="stat-num">{fmtVND(perHead)}</span>
@@ -48,12 +48,18 @@ export default function Expenses() {
         </div>
       )}
 
+      {orphanPaidCost > 0 && (
+        <div className="alert alert-error">
+          {fmtVND(orphanPaidCost)} do một người đã rời nhóm ứng trước. Khoản này vẫn được chia cho mọi người nhưng không
+          ghi có cho ai, nên sổ dưới đây chưa cân. Mở lại hoạt động đó và chọn người đại diện trả.
+        </div>
+      )}
+
       {/* Bảng cân đối */}
       <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
-          Đã trả – phải trả = dư/nợ
-        </div>
-        <table className="table">
+        <div className="eyebrow section-lbl">Số dư của từng người</div>
+        <div className="table-scroll" tabIndex={0} role="group" aria-label="Bảng dữ liệu, cuộn ngang được">
+          <table className="table">
           <thead>
             <tr>
               <th>Thành viên</th>
@@ -67,7 +73,7 @@ export default function Expenses() {
               <tr key={r.member.id}>
                 <td>
                   <strong>{r.member.display_name}</strong>
-                  <div className="muted" style={{ fontSize: '0.8rem' }}>
+                  <div className="muted tiny">
                     tham gia {r.eventCount} hoạt động có chi phí
                   </div>
                 </td>
@@ -81,41 +87,45 @@ export default function Expenses() {
             ))}
           </tbody>
         </table>
-        {ledger.length === 0 && <div className="empty" style={{ marginTop: 14 }}>Chưa có thành viên nào.</div>}
+        </div>
+        {ledger.length === 0 && <div className="empty empty-inset">Chưa có thành viên nào.</div>}
       </section>
 
       {/* Ai trả cho ai */}
       <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
+        <div className="eyebrow section-lbl">
           Ai nợ ai bao nhiêu
         </div>
         {settlements.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>
-            Cả nhóm đã cân bằng — không ai phải trả thêm cho ai.
+          <p className="muted m-0">
+            {balanced
+              ? 'Cả nhóm đã cân bằng. Không ai phải trả thêm cho ai.'
+              : 'Chưa ghép được ai với ai vì sổ đang lệch. Hãy xử lý cảnh báo phía trên trước.'}
           </p>
         ) : (
-          <ul style={{ margin: 0, paddingLeft: 20, display: 'grid', gap: 7 }}>
+          <ul className="list-tight">
             {settlements.map((s, i) => (
               <li key={i}>
                 <strong>{s.from}</strong> trả <strong>{s.to}</strong>{' '}
-                <span className="mono" style={{ fontWeight: 700 }}>
+                <span className="mono strong">
                   {fmtVND(s.amount)}
                 </span>
               </li>
             ))}
           </ul>
         )}
-        <p className="muted" style={{ fontSize: '0.82rem', marginBottom: 0, marginTop: 12 }}>
+        <p className="muted note-foot">
           Gợi ý được ghép sao cho số lần chuyển tiền là ít nhất.
         </p>
       </section>
 
       {/* Chi tiết từng hoạt động */}
       <section className="panel">
-        <div className="eyebrow" style={{ marginBottom: 12 }}>
+        <div className="eyebrow section-lbl">
           Chi tiết theo hoạt động
         </div>
-        <table className="table">
+        <div className="table-scroll" tabIndex={0} role="group" aria-label="Bảng dữ liệu, cuộn ngang được">
+          <table className="table">
           <thead>
             <tr>
               <th>Hoạt động</th>
@@ -131,20 +141,19 @@ export default function Expenses() {
                 <tr key={e.id}>
                   <td>
                     <strong>{e.title}</strong>
-                    <div className="muted mono" style={{ fontSize: '0.78rem' }}>
-                      {dayKey(e.start_time)} · {fmtTime(e.start_time)}
-                    </div>
+                    <div className="muted mono tiny">{echoDateTime(e.start_time)}</div>
                   </td>
                   <td>{memberName(e.payer_member_id)}</td>
                   <td className="num">{fmtVND(e.cost)}</td>
-                  <td className="num">{n ? `${fmtVND(e.cost / n)} × ${n}` : '—'}</td>
+                  <td className="num">{n ? `${fmtVND(e.cost / n)} × ${n}` : 'Chưa chia'}</td>
                 </tr>
               )
             })}
           </tbody>
         </table>
+        </div>
         {costEvents.length === 0 && (
-          <div className="empty" style={{ marginTop: 14 }}>Chưa có hoạt động nào phát sinh chi phí.</div>
+          <div className="empty empty-inset">Chưa có hoạt động nào phát sinh chi phí.</div>
         )}
       </section>
     </main>
