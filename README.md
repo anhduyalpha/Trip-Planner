@@ -33,7 +33,7 @@ phân quyền Lead/Member, chia tiền nhóm và theo dõi trạng thái theo th
 | ✅ | **Luồng duyệt** | Member tạo event → *Chờ duyệt*; Lead duyệt / từ chối — ép ở tầng database bằng trigger |
 | 🖱️ | **Kéo–thả** | Đổi khung giờ bằng drag & drop, kèm nút ↑ ↓ dùng được trên điện thoại |
 | ⏱️ | **Realtime engine** | Tự chuyển *Sắp tới → Đang diễn ra → Đã xong* theo giờ thật, vạch **BÂY GIỜ** trên lịch |
-| 🔐 | **Auth + phân quyền** | Đăng ký / đăng nhập Supabase Auth; Lead/Member phân quyền bằng Row Level Security |
+| 🔐 | **Auth + phân quyền** | Đăng ký, đăng nhập, khôi phục mật khẩu qua email; Lead/Member phân quyền bằng Row Level Security |
 | 💸 | **Chia tiền nhóm** | Chia đều theo người tham gia, bảng *đã trả – phải trả = dư/nợ*, gợi ý "ai trả cho ai" ít lần chuyển nhất |
 | 📊 | **Thống kê** | Theo loại, theo trạng thái, chi phí từng loại, hoạt động đang diễn ra |
 | 🔄 | **Đồng bộ nhiều máy** | Supabase Realtime — Lead duyệt event, máy thành viên tự cập nhật |
@@ -90,7 +90,9 @@ Mở <http://localhost:5173> → bấm **Đăng ký** tạo tài khoản bất k
 3. Vào **Authentication → Providers → Email**, tắt *Confirm email* để đăng ký xong đăng nhập được ngay.
 4. Copy `.env.example` thành `.env`, điền 2 giá trị ở **Project Settings → API**
    ⚠️ `VITE_SUPABASE_URL` là URL gốc dạng `https://xxxx.supabase.co`, **không** kèm `/rest/v1`.
-5. `npm run dev`
+5. Trong **Authentication → URL Configuration**, thêm các Redirect URL cho luồng quên mật khẩu:
+   `http://localhost:5173/reset-password` và `https://ten-mien-cua-ban/reset-password`.
+6. `npm run dev`
 
 </details>
 
@@ -117,7 +119,7 @@ Build production: `npm run build` · xem thử bản build: `npm run preview`
 | | *Tạm hoãn* không áp dụng logic tự động | `deriveStatus()` trả về nguyên trạng thái |
 | | *Hủy* vẫn hiển thị, vẫn chiếm khung giờ, không auto | vẫn nằm trong đường ray và trong `findFullOverlap()`, bị loại khỏi tính tiền |
 | | Hiển thị event đang diễn ra | khối "Ngay lúc này" + vạch **BÂY GIỜ** ở [`Schedule.jsx`](src/pages/Schedule.jsx) · [`Stats.jsx`](src/pages/Stats.jsx) |
-| **3** | **Auth** đăng nhập / đăng ký | Supabase Auth · [`AuthContext.jsx`](src/context/AuthContext.jsx) · [`Login.jsx`](src/pages/Login.jsx) · [`Register.jsx`](src/pages/Register.jsx) |
+| **3** | **Auth** đăng nhập / đăng ký / khôi phục mật khẩu | Supabase Auth · [`AuthContext.jsx`](src/context/AuthContext.jsx) · [`Login.jsx`](src/pages/Login.jsx) · [`Register.jsx`](src/pages/Register.jsx) · [`ResetPassword.jsx`](src/pages/ResetPassword.jsx) |
 | | **CRUD thành viên** (tên + vai trò mô tả) | [`Members.jsx`](src/pages/Members.jsx) |
 | | **Phân quyền** Lead / Member | Row Level Security trong [`schema.sql`](supabase/schema.sql) + `canEditEvent()` ở [`TripContext.jsx`](src/context/TripContext.jsx) |
 | | 1 trip 1 Lead, người tạo trip là Lead | `trips.lead_id`, gán khi tạo ở [`Trips.jsx`](src/pages/Trips.jsx) |
@@ -161,6 +163,7 @@ trip-planner/
     └── pages/
         ├── Login.jsx
         ├── Register.jsx
+        ├── ResetPassword.jsx
         ├── Trips.jsx       # danh sách / tạo trip / tham gia bằng mã
         ├── TripLayout.jsx  # topbar + đồng hồ + tabs
         ├── Schedule.jsx    # đường ray lịch trình, drag & drop, chờ duyệt

@@ -5,6 +5,7 @@ import AppLayout from './components/AppLayout'
 import AuthLayout from './components/AuthLayout'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ResetPassword from './pages/ResetPassword'
 import Trips from './pages/Trips'
 import TripLayout from './pages/TripLayout'
 import Schedule from './pages/Schedule'
@@ -41,6 +42,11 @@ export default function App() {
 
   return (
     <Routes>
+      {/* Link khôi phục tạo một session tạm. Route này phải luôn mở, nếu đặt
+          chung guard của /login thì vừa nhận session sẽ bị đá về dashboard. */}
+      <Route element={<AuthLayout />}>
+        <Route path="/reset-password" element={<ResetPassword />} />
+      </Route>
       {/* element falsy bị react-router coi là "không có element" -> render thẳng
           Outlet, khiến /login hiện TRẦN (không nền nước, không căn giữa) rồi
           remount khi loading xong, xoá sạch email/mật khẩu vừa gõ. */}

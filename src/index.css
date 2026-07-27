@@ -730,10 +730,38 @@ select {
    -webkit-, nếu test riêng thuộc tính không tiền tố thì Safari < 18 dính oan. */
 
 .auth-panel h1 { font-size: 1.55rem; margin: 2px 0 16px; }
-.auth-panel input { background: rgba(255, 255, 255, 0.85); }
+.auth-panel input { min-height: 44px; background: rgba(255, 255, 255, 0.85); }
 /* Trên nền kính bán trong suốt, màu chữ phụ phải đậm hơn để đạt WCAG AA */
 .auth-panel .muted { color: #354d5e; }
 .auth-panel a { color: var(--ocean-deep); text-decoration: underline; text-underline-offset: 2px; }
+.auth-subtitle { margin: -8px 0 16px; font-size: 0.88rem; line-height: 1.55; }
+
+/* Nhãn mật khẩu + đường khôi phục: cùng hàng nhưng nút vẫn giữ vùng bấm 44px. */
+.auth-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+.auth-label-row label { margin: 0; }
+.auth-inline-action {
+  min-height: 44px;
+  padding: 8px 2px;
+  border: 0;
+  border-radius: var(--r-tag);
+  background: none;
+  color: var(--ocean-deep);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.auth-inline-action:hover { color: var(--ocean); background: rgba(10, 95, 128, 0.08); }
+.auth-inline-action--foot { min-height: 44px; padding: 8px 4px; font-size: inherit; }
+.auth-btn-link { color: #fff !important; text-decoration: none !important; }
 
 /* Choreography vào trang: card nổi lên, nội dung so le */
 .auth-panel > * { animation: authRise 0.42s var(--ease-out) backwards; }
@@ -790,13 +818,15 @@ input[type='password']::-ms-clear { display: none; }
   letter-spacing: 0.1em;
   color: var(--txt-2);
   padding: 9px 10px;
+  min-width: 52px;
+  min-height: 44px;
   border-radius: var(--r-tag);
   transition: color var(--t-fast) ease, background var(--t-fast) ease;
 }
 .pw-toggle:hover { color: var(--ocean); background: rgba(10, 95, 128, 0.08); }
 
 /* Nút đăng nhập: vệt sáng quét qua khi hover + spinner khi bận */
-.btn-auth { position: relative; overflow: hidden; width: 100%; justify-content: center; }
+.btn-auth { position: relative; overflow: hidden; width: 100%; min-height: 44px; justify-content: center; }
 .btn-auth::after {
   content: '';
   position: absolute;
